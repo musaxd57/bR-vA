@@ -12,9 +12,9 @@ const shelfForm = document.getElementById('shelfForm');
         data.shelves.forEach(shelf => {
           const tr = document.createElement('tr');
           tr.innerHTML = `
-            <td>${shelf.code}</td>
+            <td>${BrivaDOM.escapeHtml(shelf.code)}</td>
             <td>
-              <button class="delete-btn" data-id="${shelf.id}">Sil</button>
+              <button class="delete-btn" data-id="${BrivaDOM.escapeHtml(shelf.id)}">Sil</button>
             </td>
           `;
           shelvesTableBody.appendChild(tr);

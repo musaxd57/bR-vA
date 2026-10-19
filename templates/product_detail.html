@@ -1,6 +1,7 @@
 <!DOCTYPE html>
 <html lang="tr">
 <head>
+    {% include '_security_head.html' %}
   <meta charset="UTF-8">
   <meta name="viewport" content="width=device-width, initial-scale=1">
   <title>{{ product.name }} | Ürün Detayı</title>
@@ -9,18 +10,28 @@
   <link rel="stylesheet" href="{{ url_for('static', filename='sidebar.css') }}">
   <link rel="stylesheet" href="{{ url_for('static', filename='product_detail.css') }}">
   <link href="https://cdn.jsdelivr.net/npm/remixicon@4.2.0/fonts/remixicon.css" rel="stylesheet">
+  <style>
+    .edit-mode-el, .inp-custom-attr { display: none !important; }
+  </style>
 </head>
 <body>
 
 {% include "sidebar.html" %}
 
 <main class="detail-container">
+    <section role="note" style="margin-bottom:24px; padding:18px 20px; border:1px solid #CBD5C0; border-radius:12px; background:#F2F5EC; color:#314F3C;">
+        <strong>Salt okunur eski ürün arşivi</strong>
+        <p style="margin:8px 0;">Bu sayfadaki ürün, stok ve satış bilgileri eski sisteme aittir. Güncel ürünleri ve işlemleri çalışma ekranından yönetin.</p>
+        <a href="{{ url_for('workbench') }}#catalog" style="color:#226B58; font-weight:600;">Güncel ürünlere git →</a>
+    </section>
     
     <!-- ÜST BAR -->
     <div class="detail-header">
         <a href="/storage#mevcut-stoklar" class="btn-back">
             <i class="ri-arrow-left-line"></i> Listeye Dön
         </a>
+        {% if false %}
+        <!-- Önceki düzenleme kontrolleri yalnız kaynak arşivi olarak korunur. -->
         <div class="header-actions">
             <!-- GÖRÜNTÜLEME MODU BUTONLARI -->
             <div class="view-mode-el" style="display:flex; gap:10px;">
@@ -42,6 +53,7 @@
                 </button>
             </div>
         </div>
+        {% endif %}
     </div>
 
     <div class="detail-grid">
@@ -247,6 +259,8 @@
     </div>
 </main>
 
+{% if false %}
+<!-- Eski düzenleme kodu arşiv kaynağında kalır; bu sayfada çalıştırılmaz. -->
 <script>
     // --- 1. RESİM YÖNETİMİ ---
     let imageAction = "keep"; // keep, update, delete
@@ -354,6 +368,7 @@
         }
     }
 </script>
+{% endif %}
 
 </body>
 </html>

@@ -1,0 +1,78 @@
+Briva yerel kurulum — 19 Ekim 2026
+
+GÜNCEL GELİŞTİRME NOTU
+Aktif çalışma ekranı: http://127.0.0.1:5000/workbench
+/storage önceki ürün kayıtlarının salt okunur arşividir. Yeni stok ve cari
+işlemleri /api/v2 ortak hareket defterini kullanır; yeni katalog boş başlar.
+start-local.cmd eksik briva_* tablolarını veri silmeden hazırlayıp sunucuyu açar.
+Elle yükseltme: .\.venv-local\Scripts\python.exe manage.py upgrade-local
+
+Yedek (eski dosyanın üzerine yazmaz):
+  .\.venv-local\Scripts\python.exe manage.py backup-local
+Yedek kontrolü:
+  .\.venv-local\Scripts\python.exe manage.py verify-backup --path "YEDEK_DOSYASI"
+Asıl veritabanını değiştirmeden yeni test klasöründe geri açma:
+  .\.venv-local\Scripts\python.exe manage.py restore-check --path "YEDEK_DOSYASI"
+.env içindeki SECRET_KEY ve BRIVA_AUTH_ENCRYPTION_KEY yedeğe dahil değildir;
+bunları ayrı ve güvenli tutun. İki aşamalı doğrulama sahibin açıkça kuracağı,
+varsayılan kapalı bir özelliktir. Ön hazırlık:
+  .\.venv-local\Scripts\python.exe manage.py configure-local-auth
+Bu komut yalnız eksik şifreleme anahtarını hazırlar; hesabı veya parolayı değiştirmez.
+
+Geliştirme sırasında yeni kod, stok/oturum tabloları ve testler eklenmiştir.
+Aşağıdaki ilk kurulum bölümü başlangıç tarihçesidir; güncel test kanıtları
+.verification-data/ ve docs/DEVELOPMENT-SESSION-2026-10-19.txt altında tutulur.
+
+İLK KURULUM TARİHÇESİ
+
+Kaynak: https://github.com/musaxd57/bR-vA (main)
+Adres: http://127.0.0.1:5000/login
+Envanter: http://127.0.0.1:5000/storage#mevcut-stoklar
+Yerel yönetici: musa
+Şirket: briva
+Parola sohbetin kurulum sonucunda verilmiştir; burada saklanmaz.
+
+Başlatma
+Proje klasöründeki start-local.cmd dosyasını çift tıklayın.
+PowerShell alternatifi (bu klasör içinde):
+  .\.venv-local\Scripts\python.exe app.py
+Aynı anda ikinci sunucu başlatmayın. Uygulama yalnız 127.0.0.1:5000 dinler.
+Bu kurulum sırasında sunucu arka planda başlatılmıştır.
+
+Veriler
+  .env: rastgele oturum anahtarı ve yerel ayarlar.
+  instance/data.db: yeni yerel SQLite veritabanı.
+  instance/app.log: uygulama günlüğü.
+  instance/server.stdout.log ve server.stderr.log: arka plan sunucusunun çıktısı.
+  static/uploads/: ileride eklenecek ürün görselleri.
+Eski işletme verisi depoda yoktur; stok ve müşteri listeleri boş başlar.
+AI anahtarı eklenmedi; isteğe bağlı AI servisi kapalıdır.
+
+Çalışma ortamı
+Python 3.12.14: Codex'in bilgisayardaki hazır Python çalışma ortamı.
+Çalışan sanal ortam: .venv-local (system-site-packages etkin).
+Windows Uygulama Denetimi bazı yeni DLL dosyalarını engellediği için:
+  - SQLAlchemy 2.1.5 resmî kaynak dağıtımından saf Python olarak kuruldu.
+  - FontTools 4.67.0 saf Python olarak .pure-python içine kuruldu.
+  - .venv-local/Lib/site-packages/briva_pure_python.pth bu klasöre öncelik verir.
+  - Hazır Pillow 12.3.0, openpyxl 3.1.5 ve pandas 3.0.1 kullanılır.
+  - Özgün requirements.txt pandas 2.2.3 ister; bu makineye özgü sürüm farkı
+    requirements-local.txt içinde belirtilmiştir. Excel içe/dışa aktarma
+    akışlarının tamamı ayrıca doğrulanmamıştır.
+Resmî saf Python kurulum açıklaması:
+https://docs.sqlalchemy.org/en/21/intro.html#building-the-cython-extensions
+Windows güvenlik ayarları değiştirilmedi.
+
+İlk .venv denemesi ve .local-tmp içeriği korunmuştur; çalışan ortam bunları kullanmaz.
+İlk kurulum aşamasında kaynak kod değiştirilmemişti. Eklenen .gitignore yerel anahtarları,
+veritabanını, ortamları ve yüklemeleri Git dışında tutar.
+
+Doğrulama
+  - Tarayıcıda musa ile giriş -> yönetim paneli -> envanter ekranı başarılı.
+  - GET /login: HTTP 200.
+  - Python yerel kurulum regresyonları: 4/4 başarılı.
+  - JavaScript para birimi regresyonları: 4/4 başarılı.
+Python testleri ayrı sentetik veritabanlarında çalıştırıldı. Dosya silmeme
+talimatı nedeniyle test geçici dizinlerinin temizliği devre dışı bırakıldı;
+bu dosyalar .verification-data/ altında korunur.
+Ekran görüntüsü: instance/yerel-envanter.png.

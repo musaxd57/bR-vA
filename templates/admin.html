@@ -1,6 +1,7 @@
 <!DOCTYPE html>
 <html lang="tr">
 <head>
+    {% include '_security_head.html' %}
   <meta charset="UTF-8">
   <meta name="viewport" content="width=device-width, initial-scale=1.0">
   <title>envaner | Yönetim Paneli</title>
@@ -31,21 +32,22 @@
             <div class="input-group">
                 <div class="input-wrapper">
                     <i class="ri-user-line"></i>
-                    <input type="text" placeholder="İsim" required maxlength="20" id="mudurIsim">
+                    <input type="text" placeholder="Kullanıcı adı" required minlength="2" maxlength="100" autocomplete="off" id="mudurIsim">
                 </div>
                 <div class="input-wrapper password-wrapper">
                     <i class="ri-lock-password-line"></i>
-                    <input type="password" placeholder="Şifre" required maxlength="20" id="mudurSifre">
+                    <input type="password" placeholder="En az 12 karakter" required minlength="12" maxlength="256" autocomplete="new-password" aria-describedby="manager-password-help" id="mudurSifre">
                     <button type="button" id="togglePassword" class="toggle-btn"><i class="ri-eye-line"></i></button>
                 </div>
             </div>
+            <p id="manager-password-help" style="font-size:0.85rem; color:var(--text-muted);">Şifre 12–256 karakter olmalı. Uzun bir parola cümlesi kullanabilirsiniz.</p>
             <div class="input-wrapper">
               <i class="ri-store-2-line"></i>
-              <input type="text" placeholder="Bağlı Olacağı Bayi" maxlength="30" id="mudurBayi">
+              <input type="text" placeholder="İşletme" maxlength="100" id="mudurBayi" value="{{ session.get('company', '') }}" readonly>
             </div>
             <div class="input-wrapper">
               <i class="ri-phone-fill"></i>
-              <input type="text" id="mudurphone" placeholder="Telefon Numarası">
+              <input type="tel" id="mudurphone" placeholder="Telefon Numarası" maxlength="15">
             </div>
             <button type="submit" class="submit-btn">Müdür Oluştur</button>  
           </form>
@@ -133,25 +135,30 @@
         <div class="input-group" style="margin-bottom: 1rem;">
             <div class="input-wrapper">
                 <i class="ri-user-line"></i>
-                <input type="text" id="editUsername" required placeholder="Kullanıcı Adı">
+                <input type="text" id="editUsername" required minlength="2" maxlength="100" placeholder="Kullanıcı Adı" autocomplete="off">
             </div>
             <div class="input-wrapper">
                 <i class="ri-shield-user-line"></i>
-                <input type="text" id="editRole" required placeholder="Rol">
+                <select id="editRole" class="modern-select" required aria-label="Çalışan rolü">
+                    <option value="cashier">Satış görevlisi</option>
+                    <option value="warehouse">Depo görevlisi</option>
+                    <option value="employee">Çalışan</option>
+                    <option value="manager">Yönetici</option>
+                </select>
             </div>
         </div>
         <div class="input-wrapper">
             <i class="ri-lock-password-line"></i>
-            <input type="password" id="editPassword" placeholder="Yeni Şifre (Boş bırakılabilir)">
+            <input type="password" id="editPassword" minlength="12" maxlength="256" autocomplete="new-password" placeholder="Yeni şifre: en az 12 karakter (isteğe bağlı)">
         </div>
         <div class="input-group" style="margin-bottom: 1rem;">
             <div class="input-wrapper">
                 <i class="ri-store-2-line"></i>
-                <input type="text" id="editCompany" placeholder="Bayi">
+                <input type="text" id="editCompany" placeholder="İşletme" maxlength="100" readonly>
             </div>
             <div class="input-wrapper">
                 <i class="ri-phone-fill"></i>
-                <input type="text" id="editPhone" placeholder="Telefon">
+                <input type="tel" id="editPhone" placeholder="Telefon" maxlength="15">
             </div>
         </div>
         <button type="submit" class="submit-btn">Güncelle</button>

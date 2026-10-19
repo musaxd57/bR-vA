@@ -10,7 +10,7 @@ import os
 from pathlib import Path
 import subprocess
 import sys
-import tempfile
+import uuid
 import unittest
 from unittest.mock import patch
 
@@ -22,12 +22,12 @@ sys.path.insert(0, str(PROJECT_ROOT))
 class LocalSetupTests(unittest.TestCase):
     @classmethod
     def setUpClass(cls):
-        cls.data_dir = tempfile.TemporaryDirectory(prefix="briva-setup-test-")
-        cls.addClassCleanup(cls.data_dir.cleanup)
-        cls.expected_database = Path(cls.data_dir.name) / "data.db"
+        cls.data_dir = PROJECT_ROOT / '.verification-data' / ('local-setup-' + uuid.uuid4().hex)
+        cls.data_dir.mkdir(parents=True)
+        cls.expected_database = cls.data_dir / "data.db"
         cls.environment = patch.dict(os.environ, {
             "SECRET_KEY": "synthetic-test-session-key-with-at-least-32-characters",
-            "BRIVA_DATA_DIR": cls.data_dir.name,
+            "BRIVA_DATA_DIR": str(cls.data_dir),
             "PYTHON_DOTENV_DISABLED": "1",
             "GROQ_API_KEY": "",
         })
@@ -56,7 +56,7 @@ class LocalSetupTests(unittest.TestCase):
         cls.app = cls.app_module.app
         cls.db = cls.app_module.db
         cls.models = importlib.import_module("models")
-        cls.app.config.update(TESTING=True)
+        cls.app.config.update(TESTING=True, BRIVA_ALLOW_LEGACY_WRITES=True)
 
         if cls.expected_database.exists():
             raise AssertionError("Importing app must not create the database")
@@ -92,15 +92,18 @@ class LocalSetupTests(unittest.TestCase):
         self.client = self.app.test_client()
 
     def login_admin(self):
+        token = self.client.get('/api/security/csrf').get_json()['csrf_token']
         response = self.client.post("/login", data={
             "username": self.username,
             "password": self.password,
+            "csrf_token": token,
         })
         self.assertEqual(response.status_code, 302)
         with self.client.session_transaction() as session:
             self.assertEqual(session["role"], "admin")
             self.assertEqual(session["company"], self.company)
             self.assertIsInstance(session["user"], int)
+        self.csrf = self.client.get('/api/security/csrf').get_json()['csrf_token']
 
     def test_login_page_renders_without_ai_credentials(self):
         self.assertEqual(os.environ["GROQ_API_KEY"], "")
@@ -113,6 +116,7 @@ class LocalSetupTests(unittest.TestCase):
     def test_logged_in_admin_can_create_a_product(self):
         self.login_admin()
         response = self.client.post("/product", data={
+            "csrf_token": self.csrf,
             "name": "Synthetic newly created shirt",
             "category": "Synthetic Shirts",
             "sizes": json.dumps([{"value": "M", "number": 1, "stock": 10}]),
@@ -135,7 +139,7 @@ class LocalSetupTests(unittest.TestCase):
 
     def test_new_customer_starts_with_an_empty_debt_object(self):
         self.login_admin()
-        response = self.client.post("/add_customer", json={
+        response = self.client.post("/add_customer", headers={'X-CSRF-Token': self.csrf}, json={
             "name": "Synthetic New Customer",
             "phone": "0000000043",
             "description": "Disposable local test customer",
@@ -152,29 +156,30 @@ class LocalSetupTests(unittest.TestCase):
     def test_startup_rejects_missing_or_short_secret_key(self):
         for secret in (None, "short-test-key"):
             with self.subTest(secret="missing" if secret is None else "too short"):
-                with tempfile.TemporaryDirectory(prefix="briva-secret-test-") as data_dir:
-                    environment = os.environ.copy()
-                    environment.update({
-                        "BRIVA_DATA_DIR": data_dir,
-                        "PYTHON_DOTENV_DISABLED": "1",
-                        "GROQ_API_KEY": "",
-                    })
-                    if secret is None:
-                        environment.pop("SECRET_KEY", None)
-                    else:
-                        environment["SECRET_KEY"] = secret
-                    result = subprocess.run(
-                        [sys.executable, "-c", "import app"],
-                        cwd=PROJECT_ROOT,
-                        env=environment,
-                        text=True,
-                        capture_output=True,
-                        timeout=20,
-                        check=False,
-                    )
-                    self.assertNotEqual(result.returncode, 0)
-                    self.assertIn("SECRET_KEY", result.stdout + result.stderr)
-                    self.assertFalse((Path(data_dir) / "data.db").exists())
+                data_dir = PROJECT_ROOT / '.verification-data' / ('secret-check-' + uuid.uuid4().hex)
+                data_dir.mkdir(parents=True)
+                environment = os.environ.copy()
+                environment.update({
+                    "BRIVA_DATA_DIR": str(data_dir),
+                    "PYTHON_DOTENV_DISABLED": "1",
+                    "GROQ_API_KEY": "",
+                })
+                if secret is None:
+                    environment.pop("SECRET_KEY", None)
+                else:
+                    environment["SECRET_KEY"] = secret
+                result = subprocess.run(
+                    [sys.executable, "-c", "import app"],
+                    cwd=PROJECT_ROOT,
+                    env=environment,
+                    text=True,
+                    capture_output=True,
+                    timeout=20,
+                    check=False,
+                )
+                self.assertNotEqual(result.returncode, 0)
+                self.assertIn("SECRET_KEY", result.stdout + result.stderr)
+                self.assertFalse((data_dir / "data.db").exists())
 
 
 if __name__ == "__main__":

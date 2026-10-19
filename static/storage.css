@@ -1,5 +1,146 @@
 /* /static/storage.css */
 
+/* === KOMPAKT ÜRÜN LİSTESİ STİLLERİ (YENİ) === */
+.compact-row td {
+    padding: 8px 12px !important;
+    vertical-align: middle !important;
+}
+
+.cell-product-horizontal {
+    display: flex;
+    align-items: center;
+    gap: 12px;
+}
+
+.mini-thumb {
+    width: 48px;
+    height: 48px;
+    object-fit: cover;
+    border-radius: 6px;
+    border: 1px solid var(--border-color);
+    background: #f3f4f6;
+}
+
+.info-stack {
+    display: flex;
+    flex-direction: column;
+    gap: 2px;
+}
+
+.info-stack .name {
+    font-weight: 700;
+    font-size: 0.9rem;
+    color: var(--text-color);
+}
+
+.info-stack .code {
+    font-size: 0.75rem;
+    font-family: monospace;
+    color: var(--text-light-color);
+}
+
+.category-text {
+    font-size: 0.75rem;
+    font-weight: 600;
+    color: var(--primary-color);
+    text-transform: uppercase;
+}
+
+.shelf-container {
+    display: flex;
+    flex-wrap: wrap;
+    gap: 4px;
+    margin-top: 2px;
+}
+
+.shelf-pill {
+    background: #FFF7ED;
+    color: #C2410C;
+    border: 1px solid #FFEDD5;
+    padding: 1px 6px;
+    border-radius: 4px;
+    font-size: 0.7rem;
+    white-space: nowrap;
+}
+
+.color-text {
+    font-size: 0.85rem;
+    font-weight: 500;
+    color: #4B5563;
+}
+
+.stock-main {
+    display: flex;
+    align-items: baseline;
+    gap: 4px;
+}
+
+.stock-main .qty {
+    font-size: 1.1rem;
+    font-weight: 800;
+    color: #111827;
+}
+
+.stock-main .unit {
+    font-size: 0.75rem;
+    color: #6B7280;
+}
+
+.arrival-date {
+    font-size: 0.7rem;
+    color: #9CA3AF;
+    display: flex;
+    align-items: center;
+    gap: 3px;
+}
+
+.btn-icon-small {
+    background: #FEE2E2;
+    color: #EF4444;
+    border: none;
+    width: 30px;
+    height: 30px;
+    border-radius: 6px;
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    cursor: pointer;
+    transition: all 0.2s;
+}
+
+.btn-icon-small:hover {
+    background: #EF4444;
+    color: white;
+}
+
+.inner-list-compact {
+    padding: 8px 15px 8px 60px;
+    background: #f9fafb;
+    display: flex;
+    flex-direction: column;
+    gap: 5px;
+}
+
+.inner-item {
+    display: grid;
+    grid-template-columns: 1fr 1fr 1fr 1fr auto;
+    align-items: center;
+    padding: 6px 0;
+    border-bottom: 1px dashed #e5e7eb;
+}
+
+.badge-blue-small {
+    background: #EFF6FF;
+    color: #3B82F6;
+    padding: 2px 8px;
+    border-radius: 10px;
+    font-size: 0.7rem;
+    font-weight: 700;
+    border: 1px solid #DBEAFE;
+}
+
+/* === / KOMPAKT ÜRÜN LİSTESİ STİLLERİ === */
+
 /* === KÖK DEĞİŞKENLER VE TEMEL AYARLAR === */
 :root {
   --primary-color: #3B82F6;  /* Daha modern ve canlı bir mavi */

@@ -1,0 +1,3 @@
+/* Explicit 80 mm roll option; default document stylesheet remains A4. */
+@page{size:80mm 297mm;margin:4mm}
+@media print{:root{font-size:9pt}.sale-document{width:72mm!important;max-width:72mm!important}th,td{padding:6px 2px}.barcode{font-size:8pt!important}h1{font-size:18pt}.document-reference time{font-size:8pt}.totals p,.returns p,footer{font-size:8pt}.grand-total{font-size:12pt!important}}

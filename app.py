@@ -14,11 +14,25 @@ import traceback
 import io
 import sys
 import uuid
+from collections import deque
 from sqlalchemy.orm.attributes import flag_modified
 from werkzeug.utils import secure_filename
 import json
 from PIL import Image
 import pandas as pd
+from briva_numbers import legacy_cart, money as validated_money, quantity as validated_quantity
+from briva_core import register_core
+from briva_totp import (
+    init_auth, begin_login_challenge, revoke_current_session,
+    has_authenticated_factor, revoke_user_sessions, is_user_enabled, deactivate_user,
+)
+from briva_security import (
+    init_security, establish_session, csrf_token,
+    current_user as secure_current_user, validate_employee_payload,
+    validate_permissions_payload, validate_password, SecurityValidationError,
+)
+from briva_media import register_media
+from briva_documents import register_documents
 
 BASE_DIR = os.path.abspath(os.path.dirname(__file__))
 load_dotenv(os.path.join(BASE_DIR, ".env"))
@@ -85,10 +99,67 @@ def compress_and_save(file, save_path):
 
 app.config["SQLALCHEMY_DATABASE_URI"] = f"sqlite:///{DB_PATH}"
 app.config["SQLALCHEMY_TRACK_MODIFICATIONS"] = False
+app.config["SQLALCHEMY_ENGINE_OPTIONS"] = {"hide_parameters": True}
 app.secret_key = session_secret
 app.config.update(SESSION_COOKIE_HTTPONLY=True, SESSION_COOKIE_SAMESITE="Lax")
+app.config['SESSION_COOKIE_SECURE'] = os.environ.get('BRIVA_HTTPS') == '1'
+app.config['BRIVA_ALLOW_LEGACY_WRITES'] = os.environ.get('BRIVA_ALLOW_LEGACY_WRITES') == '1'
+app.config['TRUSTED_HOSTS'] = [
+    value.strip() for value in os.environ.get(
+        'BRIVA_TRUSTED_HOSTS', 'localhost,127.0.0.1,[::1]'
+    ).split(',') if value.strip()
+]
 
-app.permanent_session_lifetime = timedelta(days=7)  # 7 gün boyunca kalıcı
+# The new variant/location ledger is the only active stock and account source.
+# Old routes remain available for historical reads, but cannot silently write a
+# separate set of inventory or customer balances. Compatibility is opt-in for
+# isolated regression tests and controlled migration work only.
+LEGACY_WRITE_ENDPOINTS = frozenset({
+    'add_expenditure', 'add_stock_route', 'collect_payment', 'create_sale',
+    'create_order_route', 'manage_order_route', 'revert_order_route',
+    'add_product_route', 'update_product_route', 'delete_product_route',
+    'add_stock_to_shelf_route', 'add_customer', 'delete_customer',
+    'add_shelf', 'add_color', 'add_category', 'delete_color',
+    'delete_category', 'delete_shelf', 'add_attribute_def_route',
+    'update_attribute_def_route', 'delete_attribute_def_route',
+    'manage_barcode_rules',
+})
+LEGACY_PAGE_DESTINATIONS = {
+    'customer_debts': 'customers', 'add_customer_route': 'customers',
+    'definitions': 'catalog', 'addcolor_route': 'catalog',
+    'addcategory_route': 'catalog', 'addshelf_route': 'inventory',
+}
+
+
+def protect_legacy_ledger():
+    compatibility = app.testing and app.config['BRIVA_ALLOW_LEGACY_WRITES']
+    if request.method in {'GET', 'HEAD'} and not compatibility and request.endpoint in LEGACY_PAGE_DESTINATIONS:
+        return redirect(url_for('workbench') + '#' + LEGACY_PAGE_DESTINATIONS[request.endpoint])
+    if (request.method not in {'GET', 'HEAD', 'OPTIONS'}
+            and request.endpoint in LEGACY_WRITE_ENDPOINTS
+            and not compatibility):
+        return jsonify(status='error', error={
+            'code': 'legacy_read_only',
+            'message': 'Bu eski ekran yalnızca arşiv içindir. İşlemi yeni çalışma ekranında yapın.',
+            'workbench': '/workbench',
+        }), 410
+
+
+@app.after_request
+def protect_response_details(response):
+    # The token can rotate after a credential change. Same-origin clients keep
+    # their next mutation valid without putting the token in a URL or log.
+    if request.endpoint != 'static':
+        response.headers['X-CSRF-Token'] = csrf_token()
+        response.headers.setdefault('Cache-Control', 'no-store')
+    if response.status_code >= 500 and request.endpoint and not request.endpoint.startswith(('briva_core.', 'briva_auth.', 'briva_media.')):
+        # Several archived handlers return str(exception); never expose SQL,
+        # local paths, or internal exception details to the browser.
+        response.set_data(json.dumps({'status': 'error', 'message': 'İşlem tamamlanamadı. Lütfen tekrar deneyin.'}, ensure_ascii=False))
+        response.content_type = 'application/json; charset=utf-8'
+    return response
+
+app.permanent_session_lifetime = timedelta(hours=24)
 
 db.init_app(app)
 migrate = Migrate(app, db)
@@ -100,7 +171,7 @@ try:
 except FileNotFoundError:
     KNOWLEDGE_BASE = "Bilgi bankası dosyası bulunamadı."
 
-logs = []
+logs = deque(maxlen=2000)
 
 class StdoutRedirector:
     def write(self, text):
@@ -133,20 +204,18 @@ log = logging.getLogger('werkzeug')
 log.setLevel(logging.WARNING)
 
 def logf(log_text):
-    if request.headers.get("X-Forwarded-For"):
-        ip = request.headers.get("X-Forwarded-For").split(",")[0].strip()
-    else:
-        ip = request.remote_addr
+    # Forwarded headers are untrusted unless a deployment explicitly installs
+    # a correctly scoped proxy adapter. Local clients cannot spoof audit peers.
+    ip = request.remote_addr
 
     full_log = f"{log_text} - IP: {ip}"
     logging.info(full_log)  # hem log dosyasına hem de logs listesine yazılır
 
 @app.route('/logs')
 def show_logs():
-    role = session.get('role')
-    if role != 'admin':
-        return redirect(url_for('main'))
-    return render_template('log.html', logs=logs)
+    # Process diagnostics contain events from multiple tenants. Only the new
+    # company-scoped audit ledger belongs in the browser.
+    return redirect(url_for('workbench') + '#history')
 
 @app.route('/add_expenditure', methods=['POST'])
 def add_expenditure():
@@ -364,10 +433,11 @@ def generate_transaction_pdf(sale_group_id):
 
 @app.route('/logs.json')
 def logs_json():
-    role = session.get('role')
-    if role != 'admin':
-        return redirect(url_for('main'))
-    return jsonify(logs=logs)
+    return jsonify(error={
+        'code': 'process_logs_private',
+        'message': 'İşlem kayıtları yeni çalışma ekranındaki şirketinize ait denetim defterindedir.',
+        'workbench': '/workbench#history',
+    }), 410
 
 @app.route("/get_product_sales_trend", methods=["GET"])
 def get_product_sales_trend_route():
@@ -514,7 +584,7 @@ def chat_ai():
     if not all([user_message, company_id, user]):
         return jsonify({"error": "Oturum süresi dolmuş veya yetkisiz erişim."}), 401
         
-    logf(f"{user.username} AI ile konuştu: {user_message}")
+    logf(f"Kullanıcı ID {user.id} AI isteği gönderdi.")
 
     # Geçmiş konuşmaları session'da tutabiliriz (Opsiyonel basit hafıza)
     if 'ai_history' not in session:
@@ -540,22 +610,31 @@ def chat_ai():
 
 @app.route('/')
 def main():
-    # Oturumda kullanıcı varsa home'a, yoksa login'e yönlendir
-    if 'username' in session:
-        if session['role'] == 'admin':
-            return redirect(url_for('admin'))
-        elif session['role'] == 'manager':
-            return redirect(url_for('manager'))
-        elif session['role'] == 'cashier':
-            return redirect(url_for('storage'))
-        else:
-                # 'employee' gibi diğer roller için home sayfasına yönlendir.
-            return redirect(url_for('login'))
+    if current_user():
+        return redirect(url_for('workbench'))
     return render_template('login.html')
+
+
+@app.route('/workbench')
+def workbench():
+    if not current_user():
+        return redirect(url_for('login'))
+    return render_template('workbench.html')
+
+
+@app.route('/product-photos')
+def product_photos():
+    if not current_user():
+        return redirect(url_for('login'))
+    return render_template('product_photos.html')
 
 @app.route('/logout', methods=['POST', 'GET'])
 def logout():
-    logf(f"{session['username']} çıkış yaptı.")
+    if request.method == 'GET':
+        return render_template('logout.html')
+    logf(f"Kullanıcı ID {session.get('user')} çıkış yaptı.")
+    revoke_current_session()
+    db.session.commit()
     session.clear()
     return redirect(url_for('login'))
 
@@ -564,15 +643,16 @@ def storage():
     company_id = session.get('company', None)  # bulunamazsa None döner
     if not company_id:
         return redirect(url_for('login'))
-    logf(f"{session['username']} depo paneline giriş yaptı.")
-    return render_template('storage.html')
+    logf(f"Kullanıcı ID {session.get('user')} depo arşivini açtı.")
+    products = Product.query.filter_by(company_id=company_id).order_by(Product.id.desc()).limit(500).all()
+    return render_template('archive_storage.html', products=products)
 
 @app.route('/profile')
 def profile():
     # Sadece giriş yapmış kullanıcıların bu sayfayı görebilmesini sağla
     if 'user' not in session:
         return redirect(url_for('login'))
-    logf(f"{session.get('username', 'Bilinmeyen')} profil sayfasını görüntüledi.")
+    logf(f"Kullanıcı ID {session.get('user')} profilini görüntüledi.")
     return render_template('profile.html')
 
 @app.route('/get_current_user_data', methods=['GET'])
@@ -592,12 +672,16 @@ def update_profile():
     if not user:
         return jsonify({"message": "Yetkisiz işlem."}), 401
 
-    data = request.get_json()
-    new_username = data.get('username', '').strip()
-    new_phone = data.get('phone', '').strip()
-
-    if not new_username:
-        return jsonify({"message": "Kullanıcı adı boş olamaz."}), 400
+    data = request.get_json(silent=True)
+    if not isinstance(data, dict) or set(data) - {'username', 'phone'}:
+        return jsonify(message='Yalnız kullanıcı adı ve telefon bilgisi gönderin.'), 400
+    new_username, new_phone = data.get('username'), data.get('phone', '')
+    if (not isinstance(new_username, str) or not 2 <= len(new_username.strip()) <= 100
+            or any(ord(char) < 32 or ord(char) == 127 for char in new_username)):
+        return jsonify(message='Kullanıcı adı 2–100 karakter olmalı ve kontrol karakteri içermemeli.'), 400
+    if not isinstance(new_phone, str) or len(new_phone) > 15 or any(ord(char) < 32 for char in new_phone):
+        return jsonify(message='Telefon bilgisi en fazla 15 karakter olmalı.'), 400
+    new_username, new_phone = new_username.strip(), new_phone.strip()
 
     # Yeni kullanıcı adının başka bir kullanıcı tarafından alınıp alınmadığını kontrol et
     existing_user = User.query.filter(User.username == new_username, User.id != user.id).first()
@@ -615,7 +699,7 @@ def update_profile():
     if success:
         # Session'daki kullanıcı adını da güncelle ki sidebar gibi yerler doğru görünsün
         session['username'] = new_username
-        logf(f"Kullanıcı ID {user.id} profilini güncelledi. Yeni ad: {new_username}")
+        logf(f"Kullanıcı ID {user.id} profilini güncelledi.")
         return jsonify({"message": "Profil güncellendi."}), 200
     else:
         return jsonify({"message": "Güncelleme sırasında bir hata oluştu."}), 500
@@ -626,12 +710,18 @@ def change_password():
     if not user:
         return jsonify({"message": "Yetkisiz işlem."}), 401
 
-    data = request.get_json()
+    data = request.get_json(silent=True)
+    if not isinstance(data, dict) or set(data) - {'current_password', 'new_password'}:
+        return jsonify(message='Geçerli parola alanlarını gönderin.'), 400
     current_password = data.get('current_password')
     new_password = data.get('new_password')
 
-    if not current_password or not new_password:
+    if not isinstance(current_password, str) or not 1 <= len(current_password) <= 256 or not new_password:
         return jsonify({"message": "Tüm alanlar zorunludur."}), 400
+    try:
+        validate_password(new_password)
+    except SecurityValidationError as error:
+        return jsonify({"message": str(error)}), 400
 
     # Mevcut şifrenin doğru olup olmadığını kontrol et
     if not user.check_password(current_password):
@@ -639,7 +729,11 @@ def change_password():
 
     # Yeni şifreyi ayarla ve kaydet
     try:
+        was_mfa_verified = has_authenticated_factor(user)
+        revoke_user_sessions(user)
         user.set_password(new_password)
+        db.session.commit()
+        establish_session(user, mfa_verified=was_mfa_verified)
         db.session.commit()
         logf(f"Kullanıcı ID {user.id} şifresini değiştirdi.")
         return jsonify({"message": "Şifre başarıyla değiştirildi."}), 200
@@ -802,12 +896,14 @@ def customer_debts():
         flash("Bu sayfayı görme yetkiniz yok.", "error")
         return redirect(url_for('main'))
 
-    logf(f"{session['username']} müşteri borçları sayfasını görüntüledi.")
+    logf(f"Kullanıcı ID {session.get('user')} cari arşivini açtı.")
     return render_template('customer_debts.html')
 
 @app.route('/sale', methods=['POST'])
 def create_sale():
     data = request.get_json()
+    if not isinstance(data, dict):
+        return jsonify({"status": "error", "message": "Geçerli bir satış isteği gerekli."}), 400
     company_id = session.get('company')
     user = current_user()
     
@@ -815,13 +911,22 @@ def create_sale():
         return jsonify({"status": "error", "message": "Satış yapma yetkiniz yok."}), 403
 
     is_debt = data.get('is_debt', False)
-    amount_paid = float(data.get('amount_paid', 0.0))
-    cart_items = data.get('items')
+    if not isinstance(is_debt, bool):
+        return jsonify({"status": "error", "message": "Veresiye seçimi geçersiz."}), 400
+    try:
+        amount_paid = float(validated_money(data.get('amount_paid', 0), 'Ödenen tutar'))
+        cart_items = legacy_cart(data.get('items'))
+    except ValueError as error:
+        return jsonify({"status": "error", "message": str(error)}), 400
     customer_name = data.get('customerName')
     sale_notes = data.get('notes')
 
     if not cart_items:
         return jsonify({"status": "error", "message": "Sepet boş olamaz."}), 400
+    if len({item['currency'] for item in cart_items}) != 1:
+        return jsonify({"status": "error", "message": "Bir satışta tek para birimi kullanılmalı."}), 400
+    if is_debt and not customer_name:
+        return jsonify({"status": "error", "message": "Veresiye için müşteri gerekli."}), 400
 
     sale_group_id = str(uuid.uuid4())
 
@@ -851,17 +956,21 @@ def create_sale():
                 # En temizi: Fiyatı (total) alıp indirimi düşmek.
                 
                 # item['price'] -> Frontend'de hesaplanan (Birim Fiyat * Toplam Adet)
-                current_item_total_price = float(item.get('price', 0)) - discount
+                batch_count = item['quantity']
+                current_item_total_price = float(item['price']) * batch_count - discount
                 
                 # Satılan bedenleri al: {'S': 2, 'M': 1} gibi
                 single_sizes_sold = item.get('single_sizes', {}) 
+                known_sizes = {size.get('value') for size in sizes_data}
+                if not set(single_sizes_sold).issubset(known_sizes):
+                    raise ValueError('Satışta ürüne ait olmayan beden var.')
                 
                 # Stok Düşme İşlemi
                 for size_info in sizes_data:
                     sz_val = size_info.get('value')
                     # Bu bedenden satıldıysa
                     if sz_val in single_sizes_sold:
-                        qty_sold = int(single_sizes_sold[sz_val])
+                        qty_sold = int(single_sizes_sold[sz_val]) * batch_count
                         
                         if size_info['stock'] < qty_sold:
                              raise ValueError(f"Yetersiz stok: {product.name} - {sz_val} bedeni. Mevcut: {size_info['stock']}, İstenen: {qty_sold}")
@@ -877,7 +986,7 @@ def create_sale():
                 sale_quantity_record = 0 
                 # Birim fiyat olarak (Toplam Tutar / Toplam Parça) kaydedebiliriz veya 0.
                 # Raporlarda karışıklık olmaması için price_at_sale'i yaklaşık bir değer yapabiliriz.
-                total_pieces = sum(int(v) for v in single_sizes_sold.values())
+                total_pieces = sum(int(v) for v in single_sizes_sold.values()) * batch_count
                 sale_unit_price = (current_item_total_price + discount) / total_pieces if total_pieces > 0 else 0
 
             # --- SENARYO 2: SERİ SATIŞ (ESKİ MANTIK) ---
@@ -887,7 +996,7 @@ def create_sale():
                 
                 # Seri stok kontrolü
                 if product.stock < quantity_of_seris_sold:
-                    raise ValueError(f"Yetersiz seri stoğu: '{product.name}'. Mevcut: {product.stock}, İstenen: {quantity_of_seris_to_sell}")
+                    raise ValueError(f"Yetersiz seri stoğu: '{product.name}'. Mevcut: {product.stock}, İstenen: {quantity_of_seris_sold}")
 
                 current_item_total_price = (price_per_seri * quantity_of_seris_sold) - discount
                 sale_quantity_record = quantity_of_seris_sold
@@ -928,6 +1037,7 @@ def create_sale():
                     new_seri_stock = min(possible_seris) if possible_seris else 0
             
             product.stock = new_seri_stock
+            consume_legacy_shelf_stock(product, sizes_breakdown_for_sale_record)
             
             # 3. Kritik Stok Bildirimi (Min Stock Kontrolü)
             if product.min_stock is not None and product.min_stock > 0:
@@ -939,7 +1049,12 @@ def create_sale():
                                  f"Kritik Eşik: {product.min_stock}")
                     
                     for target_user in authorized_users:
-                        create_notification(target_user.id, company_id, notif_title, notif_msg, 'warning')
+                        # Queue inside this sale's transaction. A notification
+                        # helper that commits here would make rollback partial.
+                        db.session.add(Notification(
+                            user_id=target_user.id, company_id=company_id,
+                            title=notif_title, message=notif_msg, type='warning',
+                        ))
 
             # 4. Satış Kaydını Oluştur
             note_suffix = " (Parça Satış)" if is_single_sale else ""
@@ -1014,34 +1129,22 @@ def create_sale():
 @app.route('/login', methods=['POST','GET'])
 def login():       
     if request.method == 'POST':
-        username = request.form['username']
-        password = request.form['password']
+        username = request.form.get('username', '').strip()
+        password = request.form.get('password', '')
 
         # GÜNCELLEME: is_valid_user artık hash'lenmiş şifreyi kontrol ediyor.
-        if is_valid_user(username, password):
-            session.permanent = True
-            session['username'] = username
-            session['role'] = get_user_data(username, 'role')
-            session['telephone'] = get_user_data(username, 'phone')
-            session['company'] = get_user_data(username, 'company')
-            session['user'] = get_user_data(username, 'id')
-            user = current_user()
-            logf(f"{session['username']} giriş yaptı.")
-
-            
-            if session['role'] == 'admin':
-                return redirect(url_for('admin'))
-            elif session['role'] == 'manager':
-                return redirect(url_for('manager'))
-            elif session['role'] == 'cashier':
-                return redirect(url_for('storage'))
-            else:
-                # 'employee' gibi diğer roller için home sayfasına yönlendir.
-                return redirect(url_for('login'))
+        if username and password and is_valid_user(username, password):
+            user = User.query.filter_by(username=username).first()
+            if begin_login_challenge(user):
+                db.session.commit()
+                return redirect(url_for('briva_auth.login_challenge'))
+            establish_session(user)
+            db.session.commit()
+            return redirect(url_for('workbench'))
         else:
             logf(f"Başarısız giriş.")
-            # flash('Geçersiz kullanıcı adı veya şifre') # İsteğe bağlı: Kullanıcıya mesaj göstermek için
-            return render_template('login.html')
+            flash('Kullanıcı adı veya şifre hatalı.', 'error')
+            return render_template('login.html'), 401
     return render_template('login.html')
 
 @app.route('/create_order', methods=['POST'])
@@ -1524,7 +1627,7 @@ def admin():
     # GÜVENLİK: Sadece admin rolündeki kullanıcıların bu sayfaya erişebilmesini sağla
     if session.get('role') != 'admin':
         return redirect(url_for('home'))
-    logf(f"{session['username']} admin paneline giriş yaptı!")  
+    logf(f"Kullanıcı ID {session.get('user')} yönetim panelini açtı.")
     return render_template(
         'admin.html',
         username=session.get('username'),
@@ -1541,12 +1644,17 @@ def update_user_route(user_id):
     if not data:
         return jsonify({"status": "error", "message": "Eksik veri"}), 400
 
-    username = data.get('username')
-    password = data.get('password')
-    role = data.get('role')
-    phone = data.get('phone')
-    company = data.get('company')
-    logf(f"{session['username']} kullanıcı bilgilerini güncelledi -> {username}")  
+    target = User.query.filter_by(id=user_id, company=current_user().company).first()
+    if target is None:
+        return jsonify({"status": "error", "message": "Kullanıcı bulunamadı."}), 404
+    try:
+        clean = validate_employee_payload(data, target=target, creating=False)
+    except SecurityValidationError as error:
+        return jsonify({"status": "error", "message": str(error)}), 400
+    username, password, role, phone, company = (
+        clean['username'], clean['password'], clean['role'], clean['phone'], clean['company']
+    )
+    logf(f"Kullanıcı ID {session.get('user')} çalışan ID {user_id} bilgilerini güncelledi.")
     existing_user = User.query.filter(User.username == username, User.id != user_id).first()
     if existing_user:
         return jsonify({"status": "error", "msg": "Bu kullanıcı adı zaten başka bir kullanıcı tarafından kullanılıyor!"}), 409
@@ -1562,7 +1670,7 @@ def manager():
     company_id = session.get('company', None)  # bulunamazsa None döner
     if not company_id:
         return redirect(url_for('login'))
-    logf(f"{session['username']} müdür paneline giriş yaptı.")  
+    logf(f"Kullanıcı ID {session.get('user')} çalışan panelini açtı.")
     return render_template(
         'manager.html',
         username=session.get('username'),
@@ -1580,12 +1688,14 @@ def add_manager():
     if not data or 'name' not in data or 'password' not in data:
         return jsonify({"status": "error", "msg": "Eksik alan!"}), 400
 
-    username = data['name']
-    password = data['password']
-    company = data.get('company')
-    phone = data.get('phone')
-    role = data.get('role', 'manager')
-    logf(f"Yeni müdür eklendi; İsim: {username} Bayi: {company}.")  
+    try:
+        clean = validate_employee_payload(dict(data, role=data.get('role', 'manager')))
+    except SecurityValidationError as error:
+        return jsonify({"status": "error", "message": str(error)}), 400
+    username, password, company, phone, role = (
+        clean['username'], clean['password'], clean['company'], clean['phone'], clean['role']
+    )
+    logf(f"Kullanıcı ID {session.get('user')} yeni müdür hesabı oluşturdu.")
     if user_exists(username):
         return jsonify({"status": "error", "msg": "Bu kullanıcı adı zaten mevcut!"}), 409
 
@@ -1623,11 +1733,14 @@ def add_user_py():
     if not data or 'name' not in data or 'password' not in data or 'role' not in data:
         return jsonify({"status": "error", "msg": "Eksik alan!"}), 400
     
-    username = data['name']
-    password = data['password']
-    company = session['company']
-    role = data.get('role')
-    logf(f"Müdür:{session['username']} yeni çalışan ekledi: {username}.")  
+    try:
+        clean = validate_employee_payload(data)
+    except SecurityValidationError as error:
+        return jsonify({"status": "error", "message": str(error)}), 400
+    username, password, company, role = (
+        clean['username'], clean['password'], clean['company'], clean['role']
+    )
+    logf(f"Kullanıcı ID {session.get('user')} çalışan hesabı oluşturdu.")
     if user_exists(username):
         return jsonify({"status": "error", "msg": "Bu kullanıcı adı zaten mevcut!"}), 409 # 409 Conflict
 
@@ -1651,6 +1764,8 @@ def add_user_py():
 
 @app.route('/add_company', methods=['POST'])
 def add_company():
+    return jsonify({"status": "error", "message": "Bu kişisel kurulumda işletme oluşturma kapalı."}), 410
+    # Archived implementation retained for reference; never reached.
     try:
         data = request.get_json()
         company_name = data.get('name')
@@ -1678,7 +1793,8 @@ def add_company():
 def get_user_permissions(user_id):
     """Bir kullanıcının mevcut izinlerini getirir."""
     user = current_user()
-    if not user or not user.can_manage_employees:
+    from briva_security import has_permission
+    if not user or not has_permission('can_manage_employees', user):
         return jsonify({"status": "error", "message": "Çalışan izinleri değiştirme yetkiniz yok."}), 403
 
     user = User.query.get(user_id)
@@ -1726,6 +1842,10 @@ def update_user_permissions(user_id):
     new_permissions = request.get_json()
     if not isinstance(new_permissions, dict):
         return jsonify({"status": "error", "message": "Geçersiz veri formatı"}), 400
+    try:
+        new_permissions = validate_permissions_payload(new_permissions, target=user)
+    except SecurityValidationError as error:
+        return jsonify({"status": "error", "message": str(error)}), 400
 
     try:
         # Gelen sözlükten verileri alıp modeldeki alanları güncelle
@@ -1741,7 +1861,6 @@ def update_user_permissions(user_id):
         user.can_manage_customers = new_permissions.get('can_manage_customers', False)
         user.can_manage_debts = new_permissions.get('can_manage_debts', False)
         user.can_orders = new_permissions.get('can_orders', False)
-        print(f"Yeni izinler: {new_permissions}")
 
         db.session.commit()
         logf(f"Kullanıcı ID {user_id} için izinler güncellendi.")
@@ -1754,12 +1873,16 @@ def update_user_permissions(user_id):
 @app.route('/deleteuser/<int:user_id>', methods=['DELETE'])
 def delete_user_route(user_id):
     user = current_user()
-    if not user or not user.can_manage_employees:
+    from briva_security import has_permission
+    if not user or not has_permission('can_manage_employees', user):
         return jsonify({"status": "error", "message": "Çalışan silme yetkiniz yok."}), 403
-    if delete_user(user_id):
-        logf(f"Kullanıcı silindi user_id: {user_id}.")  
-        return '', 204
-    return jsonify({"status": "error", "message": "Kullanıcı bulunamadı"}), 404
+    target = User.query.filter_by(id=user_id, company=user.company).first()
+    if target is None:
+        return jsonify(status='error', message='Kullanıcı bulunamadı.'), 404
+    deactivate_user(user, target)
+    db.session.commit()
+    logf(f"Çalışan erişimi kapatıldı user_id: {user_id}.")
+    return '', 204
 
 @app.route('/deletecompany/<int:company_id>', methods=['DELETE'])
 def delete_company(company_id):
@@ -1773,7 +1896,8 @@ def delete_company(company_id):
 def get_all_companys():
     if 'username' not in session:
         return jsonify({"status": "error", "message": "Giriş yapmalısınız"}), 401
-    return jsonify(get_all_companies())
+    user = current_user()
+    return jsonify([{"id": user.company, "name": user.company}])
 
 
 @app.route('/getallusers')
@@ -1781,14 +1905,15 @@ def get_all_users():
     if 'username' not in session:
         return jsonify({"status": "error", "message": "Giriş yapmalısınız"}), 401
     
-    users = User.query.all()
+    users = User.query.filter_by(company=current_user().company).all()
     result = [
         {
             "id": u.id,
             "username": u.username,
             "role": u.role,
             "company": u.company,
-            "phone": u.phone   # ✅ Telefon bilgisi eklendi
+            "phone": u.phone,
+            "active": is_user_enabled(u),
         }
         for u in users
     ]
@@ -1806,7 +1931,11 @@ def get_employees():
         return jsonify({"error": "Kullanıcı oturumu bulunamadı"}), 400
 
     # DB’den kullanıcıları çek
-    employees = get_company_employees(username)
+    roles = ('cashier', 'employee', 'warehouse', 'manager') if user.role in {'admin', 'owner'} else ('cashier', 'employee', 'warehouse')
+    employees = [{
+        'id': employee.id, 'username': employee.username, 'role': employee.role,
+        'phone': employee.phone, 'active': is_user_enabled(employee),
+    } for employee in User.query.filter(User.company == user.company, User.role.in_(roles)).order_by(User.username).all()]
     
     return jsonify(employees), 200
 
@@ -1931,8 +2060,10 @@ def api_regenerate_all_barcodes():
 
 @app.errorhandler(500)
 def internal_error(error):
-    import traceback
-    return f"500 Hatası<br><pre>{traceback.format_exc()}</pre>", 500
+    db.session.rollback()
+    logging.getLogger('briva').error('Unhandled application error class=%s endpoint=%s',
+                                   type(error).__name__, request.endpoint)
+    return jsonify(status='error', message='İşlem tamamlanamadı. Kayıt durumunu kontrol edip tekrar deneyin.'), 500
 
 @app.route("/delete_customer/<int:customer_id>", methods=["DELETE"])
 def delete_customer(customer_id):
@@ -1972,7 +2103,7 @@ def get_all_customers():
             "description": c.description,
             "address": c.address,
             "phone": c.phone,
-            "debt": c.debt if c.debt else {} # <-- YENİ EKLENEN SATIR: Borç bilgisini gönderiyoruz
+            **({"debt": c.debt if c.debt else {}} if user.can_manage_debts or user.role in {'admin', 'owner'} else {})
         }
         for c in customers
     ]
@@ -2053,7 +2184,7 @@ def delete_color(code):
     if not user or not user.can_manage_attributes:
         return jsonify({"status": "error", "message": "Renk silme yetkiniz yok."}), 403
     try:
-        color = Color.query.filter_by(code=code).first()
+        color = Color.query.filter_by(code=code, company_id=user.company).first()
         if not color:
             return jsonify({"success": False, "message": "Renk bulunamadı"}), 404
 
@@ -2070,7 +2201,7 @@ def delete_category(id):
     if not user or not user.can_manage_attributes:
         return jsonify({"status": "error", "message": "Kategori silme yetkiniz yok."}), 403
     try:
-        category = db.session.get(Category, id)
+        category = Category.query.filter_by(id=id, company_id=user.company).first()
         if not category:
             return jsonify({"success": False, "message": "Kategori bulunamadı"}), 404
 
@@ -2087,7 +2218,7 @@ def delete_shelf(id):
     if not user or not user.can_manage_attributes:
         return jsonify({"status": "error", "message": "Raf silme yetkiniz yok."}), 403
     try:
-        shelf = Shelf.query.filter_by(id=id).first()
+        shelf = Shelf.query.filter_by(id=id, company_id=user.company).first()
         if not shelf:
             return jsonify({"success": False, "message": "Raf bulunamadı"}), 404
 
@@ -2158,8 +2289,10 @@ def query_product():
 
         # Son Satış Bilgisi
         last_sale_info = None
-        last_sale = Sale.query.filter_by(product_code=code, company_id=company_id)\
-                              .order_by(Sale.sale_date.desc()).first()
+        user = current_user()
+        last_sale = (Sale.query.filter_by(product_code=code, company_id=company_id)
+                     .order_by(Sale.sale_date.desc()).first()
+                     if user.can_view_sales_history or user.role in {'admin', 'owner'} else None)
         
         if last_sale:
             seller = User.query.get(last_sale.user_id)
@@ -2470,13 +2603,13 @@ def feedback():
             try:
                 # 4. Veritabanına kaydet.
                 feedback_db(company_id, user.id, user.username, message)
-                logf(f"Kullanıcı {user.username} geri bildirim gönderdi.")
+                logf(f"Kullanıcı ID {user.id} geri bildirim gönderdi.")
                 flash("Geri bildiriminiz için teşekkür ederiz!", "success")
                 # 5. Başarılı işlemden sonra, tekrar gönderimi önlemek için sayfaya yönlendir.
                 # Artık url_for('feedback') doğru şekilde çalışacaktır.
                 return redirect(url_for('feedback'))
             except Exception as e:
-                logf(f"HATA: Geri bildirim kaydedilemedi - {e}")
+                logf("Geri bildirim kaydedilemedi.")
                 flash("Geri bildirim gönderilirken bir hata oluştu. Lütfen tekrar deneyin.", "error")
         else:
             # Mesaj boş ise hata göster.
@@ -2859,7 +2992,7 @@ def send_employee_message():
 
     if success:
         # Opsiyonel: Loglama
-        logf(f"{user.username}, çalışan ID {target_user_id}'ye mesaj gönderdi: {title}")
+        logf(f"Kullanıcı ID {user.id} çalışan ID {target_user_id} için bildirim kaydetti.")
         return jsonify({"status": "ok", "message": "Mesaj gönderildi."}), 200
     else:
         return jsonify({"status": "error", "message": "Veritabanı hatası."}), 500
@@ -2901,7 +3034,9 @@ def product_detail(product_id):
     sales_history = Sale.query.filter_by(
         product_code=product.code, 
         company_id=current_user_obj.company
-    ).order_by(Sale.sale_date.desc()).limit(50).all()
+    ).order_by(Sale.sale_date.desc()).limit(50).all() if (
+        current_user_obj.can_view_sales_history or current_user_obj.role in {'admin', 'owner'}
+    ) else []
 
     # --- YENİ EKLENEN KISIM ---
     # Şirketin tanımladığı tüm özel nitelikleri çekiyoruz
@@ -2931,6 +3066,19 @@ def delete_product_route(product_id):
         return jsonify({"status": "ok", "message": "Ürün silindi"}), 200
     else:
         return jsonify({"status": "error", "message": "Ürün bulunamadı veya silme yetkiniz yok"}), 404
+
+# All request identity, CSRF and policy checks are installed centrally.
+current_user = secure_current_user
+register_core(app)
+register_media(app)
+register_documents(app)
+init_auth(app, db, User)
+init_security(app, db, User, resource_models={
+    'Customer': Customer, 'Color': Color, 'Category': Category,
+    'Shelf': Shelf, 'Product': Product, 'Order': Order,
+})
+app.before_request(protect_legacy_ledger)
+
 
 if __name__ == "__main__":
     if not os.path.isfile(DB_PATH):

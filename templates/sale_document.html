@@ -1,0 +1,65 @@
+<!DOCTYPE html>
+<html lang="tr">
+<head>
+  <meta charset="utf-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1">
+  <title>{{ document.reference }} · İşlem belgesi</title>
+  <link rel="stylesheet" href="{{ url_for('static', filename='sale_document.css') }}">
+  {% if paper == '80mm' %}<link rel="stylesheet" href="{{ url_for('static', filename='sale_document_80mm.css') }}" media="print">{% endif %}
+  <script defer src="{{ url_for('static', filename='js/sale_document.js') }}"></script>
+</head>
+<body class="paper-{{ paper }}">
+  <nav class="document-controls" aria-label="Belge işlemleri">
+    <a href="{{ url_for('workbench') }}#history">Çalışma ekranı</a>
+    <div>
+      <a href="{{ url_for('briva_documents.sale_document', sale_id=document.id, paper='a4') }}" {% if paper == 'a4' %}aria-current="page"{% endif %}>A4</a>
+      <a href="{{ url_for('briva_documents.sale_document', sale_id=document.id, paper='80mm') }}" {% if paper == '80mm' %}aria-current="page"{% endif %}>80 mm</a>
+      <button id="print-document" type="button">Yazdır / PDF kaydet</button>
+    </div>
+  </nav>
+  <main class="sale-document">
+    <header class="document-heading">
+      <div><p class="company">{{ document.company }}</p><h1>İşlem belgesi</h1></div>
+      <div class="document-reference"><strong>{{ document.reference }}</strong><time datetime="{{ document.created_at }}">{{ document.created_at.replace('T', ' ').replace('+00:00', ' UTC') }}</time></div>
+    </header>
+    <p class="customer">{% if document.customer_id %}Müşteri kaydı #{{ document.customer_id }}{% else %}Misafir müşteri{% endif %}</p>
+    <p class="historical-note">Ürün ve fiyat bilgileri satış anında kaydedilen bilgilerdir.</p>
+
+    <table class="sale-items">
+      <caption>Özgün satış · {{ document.quantity }} parça · {{ document.currency }}</caption>
+      <thead><tr><th scope="col">Ürün / beden</th><th scope="col">Adet</th><th scope="col">Liste birim</th><th scope="col">Satış birim</th><th scope="col">İndirim</th><th scope="col">Tutar</th></tr></thead>
+      <tbody>{% for item in document['items'] %}
+        <tr>
+          <td><strong>{{ item.model_name }}</strong><span>{{ item.model_code }} · {{ item.color_name }} ({{ item.color_code }}) · {{ item.size }}</span><span class="barcode">{{ item.barcode }} · {{ item.source }}</span>{% if item.price_reason %}<span class="price-reason">Fiyat nedeni: {{ item.price_reason }}</span>{% endif %}{% if item.increase %}<span>Listeye göre fiyat artışı: {{ money(item.increase) }} {{ document.currency }}</span>{% endif %}</td>
+          <td data-label="Adet">{{ item.quantity }}</td><td data-label="Liste birim">{{ money(item.list_price) }}</td><td data-label="Satış birim">{{ money(item.unit_price) }}</td><td data-label="İndirim">{{ money(item.reduction) }}</td><td data-label="Tutar">{{ money(item.subtotal) }}</td>
+        </tr>
+      {% endfor %}</tbody>
+    </table>
+
+    <section class="totals" aria-label="Satış anındaki tutarlar">
+      <dl>
+        <div><dt>Liste fiyatları toplamı</dt><dd>{{ money(document.list_total) }} {{ document.currency }}</dd></div>
+        <div><dt>Listeye göre indirim</dt><dd>{{ money(document.discount_total) }} {{ document.currency }}</dd></div>
+        {% if document.increase_total %}<div><dt>Listeye göre fiyat artışı</dt><dd>{{ money(document.increase_total) }} {{ document.currency }}</dd></div>{% endif %}
+        <div class="grand-total"><dt>Satış toplamı</dt><dd>{{ money(document.total) }} {{ document.currency }}</dd></div>
+        <div><dt>Satışta tahsil edilen</dt><dd>{{ money(document.paid) }} {{ document.currency }}</dd></div>
+        <div><dt>Satışta cariye geçen</dt><dd>{{ money(document.account_at_sale) }} {{ document.currency }}</dd></div>
+      </dl>
+      <p>Sonraki müşteri tahsilatları bu satışa paylaştırılmaz. Buradaki cari tutarı satış anına aittir; güncel müşteri bakiyesi değildir.</p>
+    </section>
+
+    {% if document.returns_count %}
+    <section class="returns" aria-label="Satıştan sonra kaydedilen iadeler">
+      <h2>Sonradan kaydedilen iadeler</h2>
+      <p>{{ document.returns_count }} iade işlemi · {{ document.returned_quantity }} parça. İadeler özgün satış toplamını değiştirmez.</p>
+      <table><caption>Bu belge açıldığı anda kayıtlı iade adetleri</caption><thead><tr><th scope="col">Ürün / beden</th><th scope="col">İade adedi</th></tr></thead><tbody>
+      {% for item in document['items'] if item.returned_quantity %}<tr><td>{{ item.model_code }} · {{ item.color_code }} · {{ item.size }}</td><td>{{ item.returned_quantity }}</td></tr>{% endfor %}
+      </tbody></table>
+      <dl><div><dt>İade edilen ürün tutarı</dt><dd>{{ money(document.returns_total) }} {{ document.currency }}</dd></div><div><dt>Bu iade işlemlerinde geri ödenen</dt><dd>{{ money(document.refund_total) }} {{ document.currency }}</dd></div></dl>
+      <p>İade tutarı ve para iadesi ayrı kayıtlardır. Müşterinin diğer tahsilatları ve hesap hareketleri burada gösterilmez.</p>
+    </section>
+    {% endif %}
+    <footer><p>Bu belge e-fatura veya mali fiş değildir.</p><p>Briva · {{ document.reference }}</p></footer>
+  </main>
+</body>
+</html>

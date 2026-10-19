@@ -1,0 +1,30 @@
+<!DOCTYPE html>
+<html lang="tr">
+<head>
+  <meta charset="utf-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1">
+  {% include '_security_head.html' %}
+  <title>Briva · Eski ürün arşivi</title>
+  <link rel="stylesheet" href="{{ url_for('static', filename='archive.css') }}">
+</head>
+<body>
+  <main>
+    <a class="brand" href="{{ url_for('workbench') }}">BRIVA</a>
+    <h1>Eski ürün arşivi</h1>
+    <p>Bu sayfa önceki ürün kayıtlarını gösterir. Yeni ürün, mal kabul, raf ve satış işlemleri çalışma ekranında yapılır.</p>
+    <nav aria-label="İşlemler"><a class="primary" href="{{ url_for('workbench') }}">Çalışma ekranına geç</a><a href="{{ url_for('profile') }}">Profilim</a></nav>
+    {% if products %}
+    <p class="muted">En son {{ products|length }} kayıt gösteriliyor. Bu arşivdeki miktarlar yeni stok hesabına eklenmez.</p>
+    <div class="scroll"><table>
+      <caption>Önceki ürün kayıtları</caption>
+      <thead><tr><th scope="col">Kod</th><th scope="col">Ürün</th><th scope="col">Renk</th><th scope="col">Arşiv stoku</th><th scope="col">Detay</th></tr></thead>
+      <tbody>{% for product in products %}
+        <tr><td>{{ product.code }}</td><td>{{ product.name }}</td><td>{{ product.color_id }}</td><td>{{ product.stock }}</td><td><a href="{{ url_for('product_detail', product_id=product.id) }}">Görüntüle</a></td></tr>
+      {% endfor %}</tbody>
+    </table></div>
+    {% else %}
+    <section class="empty"><h2>Arşivde ürün yok</h2><p>Yeni kataloğu çalışma ekranında sıfır stokla oluşturabilirsiniz.</p></section>
+    {% endif %}
+  </main>
+</body>
+</html>

@@ -1,0 +1,47 @@
+Yerel geliştirme oturumu
+Başlangıç: 19 Ekim 2026 11:49 Europe/Istanbul (08:49 UTC)
+Kullanıcının istediği çalışma süresi: 6 saat; hedef bitiş 17:49 İstanbul (14:49 UTC).
+Aktif goal: bu chat'in bR-vA yerel geliştirme hedefi.
+
+Sınırlar
+- Hiçbir dosya silinmez; test verileri de korunur.
+- sources/ ve diğer proje alanları değiştirilmez.
+- GitHub push, deploy, bulut kaynağı, ücretli AI çağrısı yok.
+- Soru sormadan mevcut iş kuralları ve makul tercihlerle ilerlenir.
+- .env/anahtar içeriği loglara veya test kanıtına yazılmaz.
+
+Çakışma önlemi
+Diğer aktif chat: Airbnb fırsatları için site kur.
+Chat ID: 01a15352-dba2-7191-a9ad-9285ca0a5954.
+Kendi alanı development/konak-studio; bizim alan development/bR-vA.
+Kullanıcının açık izniyle bR-vA klasörü ve 5000 portu için koordinasyon mesajı gönderildi.
+
+Dosya sahipliği
+Ana ajan: app.py, db_utils.py, legacy storage.js, manage.py, entegrasyon,
+  tests/test_local_setup.py ve yeni entegrasyon/etiket testleri, dokümanlar.
+inventory_core_implementation: yeni briva_core/ paketi ve test_core_*.
+workbench_implementation: yeni templates/workbench.html, static/workbench.css,
+  static/js/workbench.js ve workbench_* JS testleri.
+security_implementation: yeni briva_security.py ve test_security_*.
+Sahipliği başka ajana verilmiş dosyalar izin alınmadan düzenlenmez.
+
+Mimari yön
+Mevcut Flask korunur. Yeni briva_core tabloları additive oluşturulur;
+eski veriler/tarihçe silinmez. Yeni /api/v2 ve /workbench çalışma alanı
+varyant, kalıcı barkod, sürümlü reçete, lokasyon hareketleri, mal kabul,
+transfer, satış, ödeme/iade ve miktarlı toplama için ortak kuralları kullanır.
+Eski stok yazma yolları yeni stokla paralel ayrı kaynak hâline gelmemeli;
+varsayılan güvenli kapatma ve test için açık uyumluluk modu değerlendirilecek.
+
+Koruma
+.local-backups/source-before-development-20261019-0849.zip Git HEAD arşivi.
+.local-backups/data-before-development-20261019-0849.db SQLite backup API kopyası.
+.analysis-evidence/source-index-20261019.json 107 dosyanın hash/envanteri.
+Bu dosyalar Git dışında tutulur; mevcut kaynak ve veritabanı silinmez.
+
+Doğrulama
+Önce kurulum testleri ve eski hata senaryoları; ardından yeni ortak servis
+iş kuralları ve HTTP güvenlik testleri. Test verileri unique retained dizinlerde
+veya bellekte tutulur. Sonra gerçek yerel tarayıcı ve yazdırılabilir etiket.
+14 kabul maddesinde donanım yoksa test edilmiş gibi sunulmaz.
+Yeni çalışmalarda tamamlanmış özellik ile açık/denenmemiş konu ayrı raporlanır.

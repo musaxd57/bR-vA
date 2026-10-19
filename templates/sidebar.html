@@ -9,14 +9,14 @@
 <!-- Sidebar Ana Yapısı -->
 <aside id="sidebar" class="sidebar">
     <div class="sidebar-header">
-        <h1 class="logo">envaner</h1>
+        <h1 class="logo">BRIVA</h1>
     </div>
     <hr>
     <nav class="sidebar-nav">
         
         <!-- YENİ EKLENEN: HIZLI SATIŞ BUTONU (En Başta ve Ayrı) -->
         <div class="sidebar-item" style="margin-bottom: 5px;">
-            <a href="{{ url_for('storage') }}#sorgula-ve-sat" style="background: rgba(255, 255, 255, 0.05); border-left: 4px solid #10B981;">
+            <a href="{{ url_for('workbench') }}#sale" style="background: rgba(255, 255, 255, 0.05); border-left: 4px solid #10B981;">
                 <div class="menu-item-content">
                     <i class="ri-shopping-cart-2-fill" style="color: #10B981;"></i>
                     <span style="font-weight: 700; color: #fff;">Satış Yap</span>
@@ -37,9 +37,9 @@
                 <i class="fas fa-chevron-down arrow-icon"></i>
             </a>
             <div class="sidebar-submenu">
-                <a href="{{ url_for('manager') }}#gosterge-paneli">Gösterge Paneli</a>
+                <a href="{{ url_for('workbench') }}#overview">Genel Bakış</a>
                 <a href="{{ url_for('manager') }}#calisan-yonetimi">Çalışan Yönetimi</a>
-                <a href="{{ url_for('manager') }}#satis-gecmisi">Satış Geçmişi</a>
+                <a href="{{ url_for('workbench') }}#history">Satış Geçmişi</a>
             </div>
         </div>
 
@@ -53,12 +53,12 @@
                 <i class="fas fa-chevron-down arrow-icon"></i>
             </a>
             <div class="sidebar-submenu">
-                <a href="{{ url_for('storage') }}#sadece-sorgula">Ürün Sorgula</a>   
-                <a href="{{ url_for('storage') }}#yeni-urun-ekle">Ürün Ekle</a>
-                <a href="{{ url_for('storage') }}#mevcut-stoklar">Stokları Görüntüle</a>
-                <a href="{{ url_for('storage') }}#gider-ekle">Gider Ekle</a>
-                <a href="{{ url_for('storage') }}#gelen-siparisler">Siparişler</a>
-                <a href="{{ url_for('storage') }}#depoya-yerlestir">Depoya Yerleştir</a>
+                <a href="{{ url_for('workbench') }}#sale">Barkodla Ürün Sorgula</a>
+                <a href="{{ url_for('workbench') }}#catalog">Ürün Ekle</a>
+                <a href="{{ url_for('workbench') }}#inventory">Stokları Görüntüle</a>
+                <a href="{{ url_for('workbench') }}#receipt">Mal Kabul</a>
+                <a href="{{ url_for('workbench') }}#picking">Raf Toplama</a>
+                <a href="{{ url_for('workbench') }}#inventory">Konum Transferi</a>
             </div>
         </div>
 
@@ -72,11 +72,11 @@
                 <i class="fas fa-chevron-down arrow-icon"></i>
             </a>
             <div class="sidebar-submenu">
-                <a href="{{ url_for('storage') }}#barkod-kurallari">Barkod Kuralları</a>
-                <a href="{{ url_for('storage') }}#nitelik-yonetimi">Nitelik Yönetimi</a>
-                <a href="{{ url_for('definitions') }}#renk-tanimlama">Renk Tanımlama</a>
-                <a href="{{ url_for('definitions') }}#raf-tanimlama">Raf Tanımlama</a>
-                <a href="{{ url_for('definitions') }}#kategori-tanimlama">Kategori Tanımlama</a>
+                <a href="{{ url_for('workbench') }}#labels">Barkod ve Etiketler</a>
+                <a href="{{ url_for('workbench') }}#catalog">Model, Renk ve Beden</a>
+                <a href="{{ url_for('workbench') }}#catalog">Seri Reçeteleri</a>
+                <a href="{{ url_for('workbench') }}#inventory">Mağaza, Depo ve Raf</a>
+                <a href="{{ url_for('storage') }}">Önceki Ürün Arşivi</a>
             </div>
         </div>
 
@@ -90,8 +90,8 @@
                 <i class="fas fa-chevron-down arrow-icon"></i>
             </a>
             <div class="sidebar-submenu">
-                <a href="{{ url_for('definitions') }}#musteri-tanimlama">Müşteri Tanımlama</a>
-                <a href="{{ url_for('customer_debts') }}">Müşteri Borçları</a>
+                <a href="{{ url_for('workbench') }}#customers">Müşteri Tanımlama</a>
+                <a href="{{ url_for('workbench') }}#customers">Cari ve Tahsilat</a>
             </div>
         </div>
         
@@ -126,10 +126,10 @@
         </div>
         <hr>
         <div class="contact-info">
-            <span>İletişim Bilgileri:</span>
+            <span>BRIVA</span>
             <div class="contact-number">
-                <i class="fab fa-whatsapp"></i>
-                <span>+90 546 235 43 47</span>
+                <i class="fas fa-box"></i>
+                <span>Stok ve satış yönetimi</span>
             </div>
         </div>
         <div class="logout-section">

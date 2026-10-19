@@ -1,3 +1,5 @@
+> TARİHSEL BAŞLANGIÇ RAPORU: Aşağıdaki küçük hazırlık sürümü açıklaması önceki durumu korur. 19 Ekim 2026 yerel geliştirmelerinde yeni stok/cari çekirdeği, barkod, güvenlik ve çalışma ekranı eklendi. Güncel kullanım README.md; kanıt ve sınırlar docs/ altındadır. Kaynak migrasyon ağacı artık tek uç gösterir; bu, eski geçiş zincirinin doğrulandığı anlamına gelmez.
+
 # Bu sürümün durumu
 
 Tarih: 19 Ekim 2026. Kaynak: sağlanan `envaner.rar`. Bu paket, kaynak yükleme ve yerel geliştirme başlangıcını düzeltir; bitmiş bir ERP veya canlıya hazır mağaza sistemi iddiası taşımaz.

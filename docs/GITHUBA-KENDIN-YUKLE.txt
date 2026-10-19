@@ -1,0 +1,15 @@
+BRIVA — GitHub hesabını bağlamadan teslim
+
+1. Hazırlanan kaynak ZIP'ini ayrı bir klasöre açın. İçindeki bR-vA klasöründe app.py, briva_core, static, templates, fonts, migrations ve tests bulunur.
+2. Kendi GitHub Desktop uygulamanızda mevcut bR-vA deponuzu açın veya kendiniz klonlayın.
+3. Paket içindeki kaynakları bu deponun çalışma klasörüne kopyalayın. app.py depo kökünde olmalı; yanlışlıkla iç içe ikinci uygulama klasörü oluşturmayın.
+4. Changes ekranında farkları gözden geçirip kendiniz commit ve push yapın. Bu hazırlama işlemi hesabınıza bağlanmadı, GitHub yetkisi almadı, push yapmadı.
+5. Yerel .env, instance veritabanı, gerçek ürün fotoğrafları ve şifreleme anahtarları kendi bilgisayarınızda/ayrı güvenli yedekte kalır. Paket bunları içermez. Kendi çalışma kopyanızdaki bu özel dosyaları kaynak kopyalama sırasında koruyun.
+
+Yeniden paketleme: python export_github.py
+Her çalışma yeni ZIP üretir; önceki paketi silmez veya üzerine yazmaz.
+ZIP içindeki EXPORT-MANIFEST.json dosya listesi ve SHA256 değerlerini içerir.
+Uygulama bu paketle internete otomatik açılmaz; dağıtım ayrı aşamadır.
+
+Özgün kaynakla uzlaştırma
+Desktop/envaner klasörü değişmeden korunmuştur. Ek kaynak referansları docs/original-reference altında açıklamalıdır. Eski bakım ve migration metinleri otomatik çalıştırılmaz. Eski Google API deneme kodundaki gömülü değer paket kopyasında temizlenmiştir; gerçek bir anahtarsa sağlayıcı panelinden ayrıca yenilenmelidir.

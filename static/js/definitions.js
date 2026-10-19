@@ -18,7 +18,7 @@ document.addEventListener("DOMContentLoaded", () => {
   function activateTabFromHash() {
     const hash = window.location.hash.substring(1);
     if (hash) {
-      const targetTab = document.querySelector(`.tab-link[data-tab='${hash}']`);
+      const targetTab = Array.from(tabs).find(tab => tab.dataset.tab === hash);
       if (targetTab) targetTab.click();
     }
   }
@@ -57,12 +57,12 @@ function setupColorManagement() {
         tr.innerHTML = `
             <td>
                 <span style="background:#F3F4F6; padding:4px 8px; border-radius:6px; font-family:monospace; font-size:0.85rem; font-weight:700;">
-                    ${color.code}
+                    ${BrivaDOM.escapeHtml(color.code)}
                 </span>
             </td>
-            <td style="font-weight:600; color:#111827;">${color.name}</td>
+            <td style="font-weight:600; color:#111827;">${BrivaDOM.escapeHtml(color.name)}</td>
             <td class="text-right">
-                <button class="btn-sm-delete delete-btn" data-code="${color.code}" title="Sil">
+                <button class="btn-sm-delete delete-btn" data-code="${BrivaDOM.escapeHtml(color.code)}" title="Sil">
                     <i class="ri-delete-bin-line"></i>
                 </button>
             </td>
@@ -125,7 +125,7 @@ function setupColorManagement() {
             const codeToDelete = button.dataset.code;
             if (!confirm(`'${codeToDelete}' kodlu rengi silmek istediğinizden emin misiniz?`)) return;
             try {
-                const resp = await fetch(`/delete_color/${codeToDelete}`, { method: "DELETE" });
+                const resp = await fetch(`/delete_color/${encodeURIComponent(codeToDelete)}`, { method: "DELETE" });
                 if (!resp.ok) throw new Error("Sunucu silme hatası");
                 button.closest('tr').remove();
             } catch (err) { console.error(err); }
@@ -151,10 +151,10 @@ function setupCustomerManagement() {
     function addCustomerRow(customer) {
         const tr = document.createElement("tr");
         tr.innerHTML = `
-            <td style="font-weight:600; color:#111827;">${customer.name}</td>
-            <td style="color:#6B7280; font-family:monospace;">${customer.phone}</td>
+            <td style="font-weight:600; color:#111827;">${BrivaDOM.escapeHtml(customer.name)}</td>
+            <td style="color:#6B7280; font-family:monospace;">${BrivaDOM.escapeHtml(customer.phone)}</td>
             <td class="text-right">
-                <button class="btn-sm-delete delete-btn" data-id="${customer.id}" title="Sil">
+                <button class="btn-sm-delete delete-btn" data-id="${BrivaDOM.escapeHtml(customer.id)}" title="Sil">
                     <i class="ri-delete-bin-line"></i>
                 </button>
             </td>
@@ -181,10 +181,10 @@ function setupCustomerManagement() {
     function createRowElement(customer) {
         const tr = document.createElement("tr");
         tr.innerHTML = `
-            <td style="font-weight:600; color:#111827;">${customer.name}</td>
-            <td style="color:#6B7280; font-family:monospace;">${customer.phone}</td>
+            <td style="font-weight:600; color:#111827;">${BrivaDOM.escapeHtml(customer.name)}</td>
+            <td style="color:#6B7280; font-family:monospace;">${BrivaDOM.escapeHtml(customer.phone)}</td>
             <td class="text-right">
-                <button class="btn-sm-delete delete-btn" data-id="${customer.id}" title="Sil">
+                <button class="btn-sm-delete delete-btn" data-id="${BrivaDOM.escapeHtml(customer.id)}" title="Sil">
                     <i class="ri-delete-bin-line"></i>
                 </button>
             </td>
@@ -301,9 +301,9 @@ function setupShelfManagement() {
         data.shelves.forEach(shelf => {
           const tr = document.createElement('tr');
           tr.innerHTML = `
-            <td style="font-weight:700; color:#D97706; font-family:monospace;">${shelf.code}</td>
+            <td style="font-weight:700; color:#D97706; font-family:monospace;">${BrivaDOM.escapeHtml(shelf.code)}</td>
             <td class="text-right">
-                <button class="btn-sm-delete delete-btn" data-id="${shelf.id}">
+                <button class="btn-sm-delete delete-btn" data-id="${BrivaDOM.escapeHtml(shelf.id)}">
                     <i class="ri-delete-bin-line"></i>
                 </button>
             </td>
@@ -397,14 +397,14 @@ function setupCategoryManagement() {
     const addCategoryRow = (cat) => {
         const tr = document.createElement("tr");
         const sizesStr = (cat.sizes && cat.sizes.length) 
-            ? cat.sizes.map(s => `<span style="background:#F1F5F9; padding:2px 6px; border-radius:4px; font-size:0.8rem; margin-right:4px;">${s}</span>`).join('') 
+            ? cat.sizes.map(s => `<span style="background:#F1F5F9; padding:2px 6px; border-radius:4px; font-size:0.8rem; margin-right:4px;">${BrivaDOM.escapeHtml(s)}</span>`).join('')
             : '<span style="color:#9CA3AF;">-</span>';
             
         tr.innerHTML = `
-            <td style="font-weight:600; color:#1F2937;">${cat.name}</td>
+            <td style="font-weight:600; color:#1F2937;">${BrivaDOM.escapeHtml(cat.name)}</td>
             <td>${sizesStr}</td>
             <td class="text-right">
-                <button class="btn-sm-delete delete-btn" data-id="${cat.id}">
+                <button class="btn-sm-delete delete-btn" data-id="${BrivaDOM.escapeHtml(cat.id)}">
                     <i class="ri-delete-bin-line"></i>
                 </button>
             </td>

@@ -1,9 +1,10 @@
 <!DOCTYPE html>
 <html lang="tr">
 <head>
+    {% include '_security_head.html' %}
   <meta charset="UTF-8" />
   <meta name="viewport" content="width=device-width, initial-scale=1.0"/>
-  <title>envaner | Yönetim Paneli</title>
+  <title>BRIVA | Çalışan yönetimi</title>
   
   <!-- Modern Font Ailesi -->
   <link rel="preconnect" href="https://fonts.googleapis.com">
@@ -19,7 +20,7 @@
   <link href="https://cdn.jsdelivr.net/npm/remixicon@4.2.0/fonts/remixicon.css" rel="stylesheet">
   <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.4.0/css/all.min.css"/>
 </head>
-<body>
+<body data-account-owner="{{ 'true' if session.get('role') in ('admin', 'owner') else 'false' }}">
 
   <!-- Sidebar -->
   {% include "sidebar.html" %}
@@ -29,23 +30,26 @@
     
     <!-- SEKME NAVİGASYONU -->
     <div class="tabs-navigation">
-      <a href="#" class="tab-link active" data-tab="gosterge-paneli"><i class="ri-dashboard-line"></i> Gösterge Paneli</a>
-      <a href="#" class="tab-link" data-tab="calisan-yonetimi"><i class="ri-user-settings-line"></i> Çalışan Yönetimi</a>
-      <a href="#" class="tab-link" data-tab="satis-gecmisi"><i class="ri-history-line"></i> Satış Geçmişi</a>
+      <a href="#calisan-yonetimi" class="tab-link active" data-tab="calisan-yonetimi"><i class="ri-user-settings-line"></i> Çalışan Yönetimi</a>
+      <a class="tab-link" href="{{ url_for('workbench') }}#overview"><i class="ri-dashboard-line"></i> Güncel Özet</a>
+      <a class="tab-link" href="{{ url_for('workbench') }}#history"><i class="ri-history-line"></i> Yeni Satış Geçmişi</a>
+      <a href="#gosterge-paneli" class="tab-link" data-tab="gosterge-paneli"><i class="ri-archive-line"></i> Eski Özet · Arşiv</a>
+      <a href="#satis-gecmisi" class="tab-link" data-tab="satis-gecmisi"><i class="ri-archive-line"></i> Eski Satışlar · Arşiv</a>
     </div>
+    <p class="text-muted" style="padding: 0 4px 18px;">Bu sayfa ekip yönetimi içindir. Yeni barkod, stok, satış ve cari işlemleri <a href="{{ url_for('workbench') }}">çalışma ekranında</a> tutulur. Arşiv sekmeleri yeni işlemleri içermez.</p>
 
     <!-- SEKME İÇERİKLERİ -->
     <div class="tabs-content">
 
       <!-- Gösterge Paneli -->
-      <div id="gosterge-paneli" class="tab-panel active">
+      <div id="gosterge-paneli" class="tab-panel">
     
         <!-- 1. BÖLÜM: HERO BANNER (Finansal Özet - Son Tasarımdan) -->
         <div class="hero-banner">
             <div class="hero-header">
                 <div>
-                    <h2>Finansal Özet</h2>
-                    <span class="hero-date"><i class="ri-time-line"></i> Canlı Veriler</span>
+                    <h2>Eski İşlemlerin Özeti</h2>
+                    <span class="hero-date"><i class="ri-archive-line"></i> Arşiv · Yeni satışlar dahil değil</span>
                 </div>
                 <div class="hero-icon-bg">
                     <i class="ri-funds-box-line"></i>
@@ -167,13 +171,13 @@
       </div>
 
       <!-- Çalışan Yönetimi Paneli -->
-      <section id="calisan-yonetimi" class="tab-panel">
+      <section id="calisan-yonetimi" class="tab-panel active">
     
         <!-- Başlık -->
         <div class="dashboard-header">
             <div>
                 <h2>Personel Yönetimi</h2>
-                <p class="text-muted">Ekip arkadaşlarınızı buradan ekleyebilir ve yetkilendirebilirsiniz.</p>
+                <p class="text-muted">Ekip arkadaşlarınızı ekleyin. İşletme sahibi yetkileri ve erişimi yönetebilir; erişimi kapatılan çalışanın işlem geçmişi korunur.</p>
             </div>
         </div>
 
@@ -188,15 +192,16 @@
                 <div class="add-employee-form-modern">
                     <div class="form-group-modern">
                         <label>Kullanıcı Adı</label>
-                        <input type="text" id="kullaniciAdi" class="clean-input full-width" placeholder="Örn: Ahmet Yılmaz" maxlength="15" autocomplete="off">
+                        <input type="text" id="kullaniciAdi" class="clean-input full-width" placeholder="Örn: Ahmet Yılmaz" required minlength="2" maxlength="100" autocomplete="off">
                     </div>
 
                     <div class="form-group-modern">
                         <label>Şifre</label>
                         <div class="password-wrapper-modern">
-                            <input type="password" id="passwordInput" class="clean-input full-width" placeholder="******" maxlength="15" autocomplete="new-password">
+                            <input type="password" id="passwordInput" class="clean-input full-width" placeholder="En az 12 karakter" required minlength="12" maxlength="256" autocomplete="new-password" aria-describedby="employee-password-help">
                             <button id="togglePassword" class="eye-btn-modern" type="button"><i class="ri-eye-line"></i></button>
                         </div>
+                        <small id="employee-password-help">12–256 karakter. Uzun bir parola cümlesi kullanabilirsiniz.</small>
                     </div>
 
                     <button class="calisan-ekle-btn btn-primary-modern" type="button">

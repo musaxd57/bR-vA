@@ -1,0 +1,151 @@
+BRIVA — CORE DIŞI İŞ MANTIĞI DENETİMİ
+19 Ekim 2026; yerel geliştirme kopyası
+
+Kapsam ve yöntem
+Bu rapor yeni stok/satış/cari çekirdeğinin dışında kalmış yolları inceler.
+İnceleme sırasında ana uygulama dosyaları bu denetçi tarafından değiştirilmedi.
+Bulunan düzeltmeler dosya sahipliğini koruyarak ana/güvenlik ajanına aktarıldı.
+Hiçbir dosya silinmedi. Gerçek işletme verisi testte kullanılmadı; dış ağa,
+GitHub'a, AI sağlayıcısına veya dağıtım hizmetine istek yapılmadı.
+sources/, .env içeriği, anahtarlar, gerçek veritabanları, yüklenen görseller,
+arşivler ve bağımlılıkların tamamı bu kaynak denetiminin dışında bırakıldı.
+Satır numaraları eşzamanlı geliştirmede ilerleyebilir; fonksiyon adı da verildi.
+
+Kaynak kapsam kaydı
+- app.py: bütün işlev/route envanteri, request hook sırası, stok/satış/cari,
+  ürün/tanım/müşteri/çalışan/oturum/bildirim/AI/rapor/export gövdeleri incelendi.
+  PDF sınıflarının bütün görsel biçimlendirmesi ayrı bir tasarım denetimi değildir.
+- db_utils.py: bütün fonksiyon gövdeleri (yaklaşık 2.367 satır); SQL tenant
+  filtreleri, commit/delete noktaları, eski stok JSON hesabı, sipariş onay/geri
+  alma, tahsilat, barkod değiştirme, Excel ve AI yardımcıları okundu.
+- models.py: tamamı; User ile eski Product/Sale/Customer/DebtTransaction/
+  Order/Notification şemaları ve kısıtları karşılaştırıldı.
+- ai_utils.py: araç şeması, gerçek dispatcher, provider istemcisi ve tamamlanma
+  akışı; yeni çekirdeği kullanmadığı doğrulandı. Çağrı yapılmadı.
+- manage.py, update.py, start-local.cmd, extensions.py: tamamı okundu.
+- briva_backup.py, briva_numbers.py, briva_media.py: tamamı okundu; yeni
+  çekirdeğe doğrudan yazılan alanlar ve salt okunur/yazma sınırları incelendi.
+- briva_security.py: merkezi kimlik, CSRF, izin, tenant resource guard,
+  retired endpoint ve log politikaları incelendi. briva_auth_models.py tamamı,
+  briva_totp.py şema/kimlik/erişim entegrasyonu incelendi. Bu rapor bağımsız
+  kriptografi denetimi iddiası taşımaz; MFA testleri ayrı güvenlik çalışmasıdır.
+- migrations/env.py ve 36 revision dosyası: kaynak AST ile revision bağları,
+  upgrade işlemleri, tekrar sütunlar ve drop işlemleri çıkarıldı; uygulanmadı.
+- templates/sidebar.html, archive_storage.html, manager.html ile eski cari,
+  ürün detay, tanım/ekleme şablonları; ilişkili JS endpoint ve HTML üretimi
+  incelendi. Depodaki tüm CSS/vendor minified JS satırları okundu iddiası yoktur.
+- test_security_actual_app.py test izolasyonu, test_legacy_integrity.py ve
+  yerel test koşucularının kapsamı kontrol edildi; ayrı kalıcı arşiv izolasyon
+  testi eklendi. Tüm test dosyalarının her satırına bu rapor kapsama sözü vermez.
+
+1. Satış arşivinde şirketler arası detay karışması — BULUNDU, DÜZELTİLDİ
+Yer: db_utils.py get_paginated_sales_groups(), yaklaşık 1140–1154.
+İlk sorgu yalnız kendi şirketindeki sale_group_id listesini alıyordu; ikinci
+sorgu yalnız sale_group_id IN (...) yaparak şirket filtresini kaybediyordu.
+models.py Sale.sale_group_id şirketler arasında benzersiz değildir. Eski veri
+birleştirme veya aynı grup kimliği durumunda başka şirketin satırları geliyordu.
+Ayrıca Product.code yalnız şirket içinde benzersizken arama join'i şirketsizdi.
+
+Tekrar üretim: ayrı sentetik gerçek Flask uygulamasında A ve B şirketlerinde
+aynı legacy grup kimliği oluşturuldu. A /all_sales cevabında B ürün kodu,
+B müşteri adı, B satıcısı, B beden satırı ve 987 TL yabancı tutar göründü;
+A'nın 100 TL işlemi toplam 1.087 TL sunuldu. Gerçek veriye dokunulmadı.
+Önceki bulgunun kanıtı:
+  .verification-data/legacy-audit-14609dc8956f43879490c49ca4c28871/legacy-audit-report.json
+Küçük düzeltme: detay sorgusuna Sale.company_id == company_id;
+ürün arama join'ine Product.company_id == company_id eklendi (ana ajan).
+Kalıcı test: tests/test_legacy_audit.py; yabancı grup detayı ve aynı kodlu
+yabancı ürün adıyla arama dahil 3/3 test geçti (2,521 saniye).
+Sonuç:
+  .verification-data/legacy-audit-regression-b67e9148cc14479d9acbaa56d4aa497c/regression-report.json
+
+2. Ham uygulama logunun şirketler arasında paylaşılması — BULUNDU, KAPATILDI
+Yer: app.py ListHandler/StdoutRedirector/logs deque; show_logs()/logs_json().
+Ortak process log kuyruğu tenant bilgisiyle ayrılmadan /logs.json ile admin
+rolüne açılıyordu. logf bazı eski işlemlerde müşteri/ürün/açıklama yazıyordu.
+İşletme sahibi rolü başka şirketin log verisine erişim hakkı vermez.
+Ana ajan /logs yolunu yeni geçmişe yönlendirdi; /logs.json ham içerik yerine
+410 döndürüyor. Bellekteki tarihçe/kaynak dosyalar silinmedi.
+Bu bulgu değişiklik öncesi kaynakla kanıtlandı; aynı anda düzeltme geldiğinden
+değişiklik öncesi dinamik sızıntı testi çalıştırılmış gibi gösterilmez.
+Değişiklik sonrası A'nın sentetik ürün sorgu marker'ını B sahibi göremedi,
+/logs.json410 döndü; yukarıdaki gerçek-app raporu ve kalıcı test bunu doğrular.
+
+3. Eski AI dispatcher HTTP yazma kapısını atlayabiliyordu — KAPATILDI
+Yer: ai_utils.py execute_tool_call(), yaklaşık 215–269;
+db_utils.py ai_create_sale()/ai_manage_order(), yaklaşık 956 ve 2282.
+Araçlar çekirdek servisinden ve işlem/izin sınırından geçmeden eski tablolara
+yazıyor. ai_create_sale yalnız Product.stock düşürüp beden/raf JSON'larını
+güncellemiyor. ai_manage_order company_id alsa da process_order_approval'a
+aktarmıyor; yardımcı yalnız sipariş ID'sini okuyor. Bunlar mevcut çekirdeğin
+alternatifi yapılamaz. Dispatcher ayrıca argümanları print ile logluyordu.
+Güvenlik ajanı briva_security.security_before_request içinde /chat_ai yolunu
+koşulsuz 503 yaptı; BRIVA_ENABLE_LEGACY_AI=True bile bunu açmıyor.
+Provider ağına gidilmedi. Arşiv yardımcıları çağrılmadı/silinmedi. Gelecekte
+AI analizi ayrı ve salt okunur veri görünümüyle tasarlanmalı; eski dispatcher
+yeniden etkinleştirilmemeli. Görsel tahmini kesin stok hareketi olmamalı.
+
+4. Normal ortam değişkeniyle eski ikinci defterin açılması — ÖNERİ AKTARILDI
+Yer: app.py BRIVA_ALLOW_LEGACY_WRITES ayarı ve protect_legacy_ledger(), 105–136.
+Varsayılan false; incelemede normal akışta açık ikinci yazma yolu bulunmadı.
+Ancak ortamda BRIVA_ALLOW_LEGACY_WRITES=1 eski Product/Sale/Customer stok/cari
+mutasyonlarını tekrar açıyor; yeni briva_* defteriyle ortak işlem üretmiyor.
+Bu iki ayrı stok/cari sonucu doğurabilir. Kontrollü eski regresyon testleri
+ile normal çalışmanın ayrılması önerildi: yalnız TESTING + açık compatibility
+ayarı veya normal çalışma için koşulsuz kapatma. Bu rapor env içeriğini okumaz;
+kullanıcının yerel değerinin 1 olduğu iddia edilmez.
+
+5. Eski ekranlar hâlâ aktif işlem gibi görünebiliyor — ÖNERİ AKTARILDI
+Yer: customer_debts route/şablonu; product_detail şablonu; definitions,
+addcolor/addshelf/addcategory/add_customer_route eski ekleme sayfaları.
+Eski cari sayfası 'Müşteri Borçları Yönetimi' başlığı ve Tahsilatı Kaydet formu
+gösteriyor; arşiv ürün detayı Düzenle/Sil butonları gösteriyor. Yazma410 ile
+engellenir; buna rağmen kullanıcı eski bakiyeyi güncel sanabilir veya işlemi
+tamamlayamayabilir. Çözüm: GET sayfalarını karşılık gelen /workbench bölümüne
+yönlendirme veya belirgin salt okunur arşiv başlığı/formların kaldırılması.
+/storage arşiv sayfası ve /manager eski özet/satış sekmeleri kaynakta artık
+doğru arşiv etiketli, yeni çalışma ekranına bağlantılıdır.
+
+6. Tarihsel migrasyon zinciri — KAYIT, ÜRETİME GEÇİŞ ÖNCESİ SINIR
+update.py salt okunur çalıştırıldı; güncel tek head 91d9647e4196.
+6a4f2cbb5231 geçmiş dalları birleştiriyor. README/DURUM üç head dediği için
+belge düzeltmesi ana ajana bildirildi. Tek head olması uygulanabilirlik kanıtı
+değildir: art arda fixed_series/sale_group_id ekleme revizyonları, shelf/shelves
+drop işlemleri var; ilk revision mevcut product tablosuna sütun ekliyor.
+Yeni boş kurulum manage.py init ile güncel modellerden yapılır; upgrade-local
+yalnız eksik çekirdek/auth/media tablolarını additive oluşturur. Eski verinin
+migrasyonu, Flask db upgrade veya PostgreSQL dönüşümü burada doğrulanmadı.
+Eski migrate/stamp/upgrade komutları uygulanmadı; otomatik eski veri taşınmadı.
+
+7. Diğer gözlemler / gerçekten kapalı sınırlar
+- Eski Excel upload1/2/3 ve toplu barkod yeniden üretme uçları güvenlik
+  hook'unda kalıcı410; dosya yükleme/silme gövdesine varılmıyor. İçlerinde
+  os.remove/db.session.delete bulunması çalıştırıldıkları anlamına gelmez.
+- Eski satış/stock/payment/order/ürün/müşteri/tanım mutasyonları endpoint
+  listesinde; default çalışma yazmayı engelliyor. GET'li tanım route'ları
+  yalnız şablon döndürüyor; GET üzerinden stok/cari yazma bulunmadı.
+- getallusers ve şirket listesi kendi şirketine sınırlı. Kullanıcı/ürün/
+  müşteri/sipariş path/body kimliklerinde merkezi tenant guard bulunuyor.
+- get_all_customers borç alanını finans izni olmayan kullanıcıya dönmüyor;
+  query_product/product_detail son satışını yalnız satış geçmişi izni sunuyor.
+- Eski tüm istatistik/PDF/Excel raporları eski tablolardan okur; yeni satış
+  toplamı sayılmazlar. Yeni defterle bunları sessizce birleştirmek doğru değil.
+- Eski delete_company_db tanımlı olmayan Company sınıfına başvurur; dış yol
+  kişisel kurulumda emekliye ayrılmalı. Hiçbir şirket silme çağrısı yapılmadı.
+- Core dışında briva_media yalnız normalize edilmiş özel fotoğraf kaydı ve
+  AuditEvent ekler; command() ortak transaction/idempotency sınırını kullanır.
+  V2 fiziksel stok/cari tablosuna gizli paralel yazma tespit edilmedi.
+- Backup canlı SQLite backup API ile yeni dosya oluşturur; üzerine yazmayı
+  O_EXCL engeller; restore-check ayrı retained dizine açılır. Anahtarlar yedeğe
+  eklenmez. Ledger/balance kontrolü otomatik onarım yapmaz.
+- Ham SQLAlchemy hata metni core command logundan kaldırıldı; yalnız hata
+  sınıfı/actor/request kaydediliyor. Sentetik hassas exception metninin logda
+  görünmediği domain testi dahil 60 core domain testi geçti. Ana ajan engine
+  hide_parameters=True ekledi. Yerel log dosyası yine yönetim bilgisidir.
+
+Sınırlar
+Bu çalışma bir penetrasyon testi, tüm dependency güvenlik taraması veya
+canlıya hazır onayı değildir. Kaynak okuma + bağımsız sentetik HTTP kanıtıdır.
+Gerçek PostgreSQL sunucusunda işlem/eşzamanlılık testi ve fiziksel okuyucu/
+yazıcı pilotu yapılmadı. Bir dosyanın kapsam envanterinde bulunması onun tüm
+satırlarının görsel/işlevsel doğrulamasının yapıldığı anlamına gelmez.

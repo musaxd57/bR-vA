@@ -1,0 +1,66 @@
+BRIVA — yerel geliştirme artımı, 19 Ekim 2026
+
+DURUM
+Bu rapor yerel geliştirme sonucudur. Üretime hazır onayı veya bütün gelecekteki özelliklerin bitirildiği iddiası değildir. Asıl uygulama http://127.0.0.1:5000/workbench adresinde, başlangıç kataloğu ve fiziksel stoku sıfırdır. 5010 portu ayrı sentetik test mağazasıdır.
+GitHub hesabına bağlantı/yetki alınmadı; commit/push, Railway/Vercel/Supabase dağıtımı yapılmadı. Hiçbir dosya silinmedi. Başka Codex sohbetinin konak-studio klasörüne müdahale edilmedi.
+
+1. BARKOD VE ÜRÜN KİMLİĞİ
+Model x renk x beden bir kerede tanımlanır; her varyantın kalıcı barkodu vardır. Aynı model/renk/bedenin 100 kıyafetine aynı varyant etiketi basılması normaldir. Ayrı varyantların kodları çakışmaz. Sistem, tekli parça / seri reçetesi / fiziksel paket / konum kodunu ayırt eder.
+Barkodun içine değişebilir stok, fiyat, raf veya ilk adet konmaz. Markaya özel yeni kod kuralı eski basılmış etiketleri değiştirmez. 13 haneli işletme içi kod GS1 tahsisi sayılmaz.
+Seri reçetesi sürümlüdür. Bir dağılım değişirse yeni reçete açılır; bekleyen görev ve eski satışın içeriği değişmez. Tek gömleğin poşeti çoklu seri paketi sayılmaz.
+
+2. BAŞLANGIÇ STOĞU VE ATÖLYE
+Plan ve etiket basımı miktarı artırmaz. Gerçek gelen bedenleri bir tabloda topluca girme, seri çarpanı ve ilave teklemeler desteklenir. İkinci kez gönderilen mal kabul aynı anahtarla stok eklemez.
+Örnek: 10 seri plan S10/M20/L20/XL10. Gelen S10/M21/L20/XL9 ise toplam yine60 olmasına rağmen XL1eksik/M1fazla gösterilir. S1/M2/L2/XL1 reçetesinde9tamseri ve S1/M3/L2/XL0 kalan oluşur. Sistem yalnız toplam adede bakmaz.
+Kusurlular karantinaya ayrılır. Karantina fiziksel stokta görünür; satışa kullanılamaz. Sayım, stok değerinin üzerine sessizce yazmak yerine gerekçeli fark hareketi oluşturur; eski sayım yeni hareketleri ezemez.
+
+3. TEKLİ/SERİ SATIŞ, FİYAT VE CARİ
+Aynı sepette seri, tekli ve özel beden karışımı gerçek bileşenlerine açılır. Barkod satış birimini belirler. Varsayılan fiyat parça başınadır; işletme sahibi gerekçeyle değiştirebilir. Liste ve uygulanan fiyat satış anında saklanır.
+Sunucu stok, satış, ödeme ve cari hareketini tek transaction içinde işler. Son satır hatalıysa önceki satırlar da geri alınır. Aynı işlem anahtarının tekrarı ikinci satış oluşturmaz. Farklı para birimleri birbirine eklenmez.
+İade özgün satışa bağlıdır; fazla iade ve müşteri alacağını aşan geri ödeme reddedilir. Genel cari tahsilatları tek tek eski faturalara paylaştırılmış gibi gösterilmez. Satıştaki ilk alınan/kalan tutar ile güncel cari ayrı kavramlardır.
+
+4. KONUM, PAKET VE TOPLAMA
+Merter/Galata aynı şirketin ayrı mağaza/depo kökleridir. Raf ve beden miktarları ayrı tutulur. Transfer toplam fiziksel miktarı korur. Alt raflar açıkça seçildiğinde sadece o şube kapsamı birleştirilir; farklı şubedeki parça hazır seri sayılmaz.
+Toplama görevi gerçek kaynak rafları rezerve eder. Önce ilgili raf barkodu, sonra doğru beden barkodu ve gerçek adet gerekir. Yanlış raf/beden, fazla okutma ve eksik toplamayla satış engellenir. İptal rezervasyonları gerçek kaynak raflarda serbest bırakır.
+Kapalı çoklu paketlerin kendine özel kimliği/içeriği vardır. Açma ve transfer parça toplamını değiştirmez. Paketli stok aynı anda serbest tekli stok olarak satılamaz.
+Raf önceliğini işletmenin yürüme rotasına göre ayarlayan gelişmiş optimizasyon henüz yoktur; güvenli tahsis vardır. Eski koddaki alfabetik A1-önce davranışı birebir taşınmış sayılmaz.
+
+5. GÜVENLİK
+Şirket/kimlik/yetki sunucudan gelir. CSRF, güvenli çerez seçenekleri, tekrar işlem anahtarları ve eski sekmenin başka hesaba işlem yapmasını engelleyen bağlam kontrolü eklendi.
+Oturumlar sunucuda iptal edilebilir. Şifre değişimi diğer oturumları kapatır. Çalışan erişimi kapatılırken kullanıcı ve işlem geçmişi korunur. MFA, şifreli kurulum sırrı, tek kullanımlık kurtarma kodu ve tekrar TOTP kullanma engeliyle hazırdır; sahibin hesabında MFA otomatik açılmadı.
+Giriş deneme sınırı veritabanında süreçler/yeniden başlatmalar arasında korunur. Ham IP/kullanıcı adı yerine HMAC özetleri tutulur. İki gerçek Windows süreciyle doğrulandı.
+Eski stok/cari HTTP yazma yolları normal çalışmada kapalıdır. Ortam bayrağı tek başına açamaz. Eski AI, Excel ve toplu barkod değiştirme yolları kalıcı kapalıdır. Eski ürün detayı salt okunur; eski işlem formları yeni çalışma bölümüne yönlenir.
+Eski satış gruplarının farklı şirketlerden karışması ve ortak ham sunucu günlüğünün webden görünmesi açıkları düzeltildi. İşletme kendi şirket denetim defterini görür.
+OSV sorgusu 33 paket/sürüm çiftinde0bilinen duyuru eşleşmesi verdi. Bu güvenlik garantisi değildir; CDN, opsiyonel ekstralar ve tüm tedarik zinciri bu sonucun kapsamında değildir.
+
+6. FOTOĞRAF, BELGE VE ETİKET
+Ürün fotoğrafları şirket oturumuyla açılır. JPEG/PNG/WebP, piksel/boyut sınırı ve metaveri temizliği uygulanır. Yeni fotoğraf eski fotoğraf geçmişini silmez. Görselden stok miktarı yazan OpenAI/Groq servisi bağlı değildir.
+A4/80mm işlem belgesi özgün satıştaki parça, fiyat ve ilk tahsilatı gösterir; iadeleri ayrı bölümde gösterir. Tarih İstanbul saatinde okunur. Bu çıktı e-fatura entegrasyonu değildir. Mevcut eski satışlarda müşteri adı dondurulmadığı için belge müşteri kayıt numarasını gösterir.
+Code128 B/C çizimi bağımsız ZXing ile çözüldü. İzin verilen114dijital baskı profili114kez okundu. Daha geniş toplam örneklemde okunmayan dar profiller de vardı; arayüz yetersiz piksel genişliğinde baskıyı engeller. Gerçek yazıcı, etiket, hız/koyuluk ve fiziksel okuyucu pilotu yapılmadı.
+
+7. SOMUT DOĞRULAMA
+Son toplu rapor: .verification-data/local-checks-d3a9aa949fb3420a89c7302a5678f82f/result.json
+280test PASS. Son küçük arayüz düzeltmesinden sonra49JavaScript kontrolü ayrıca PASS.
+Ayrı bağımsız stok/cari oracle10.000karışık komutu doğruladı. Bu, üretim hacmi veya bütün olası hata durumlarının kanıtı değildir.
+Tarayıcıda sentetik atölye60parça kabul, M+1/XL-1 farkı,12parça raf transferi, yanlış raf/eksik toplama reddi,7parça700TLsatış/250TLtahsilat doğrulandı. Stok53oldu; tam iade sonrası60, müşteri alacağı-250, geri ödeme250sonrası cari0görüldü. Fotoğraf yükleme ve etiket önizlemesi de gerçek tarayıcıda denendi.
+14maddenin13'ü yerel yazılım testleriyle PASS;14.donanım maddesi NOT_TESTED. Ayrıntı docs/KABUL-14-GUNCEL-2026-10-19.json.
+Ana yerel DB'nin yedeği yeni dosyaya alındı ve yeni test klasöründe geri açıldı. Bütünlük/yabancı anahtar/stok defteri kontrolü temiz, SHA256eşit. Anahtarlar DB yedeğine dahil değildir.
+
+8. ÖZGÜN KAYNAK VE GITHUB TESLİMİ
+Desktop/envaner içindeki99kaynak/varlık dosyası ayrı salt okunur karşılaştırıldı; özel .env/.git/instance/yüklemeler/log ve kişisel PDF açılıp pakete taşınmadı. GitHub kopyasındaki storage.css'de eksik kompakt liste stilleri geri alındı. Önceki CSS ayrı yedekte korundu.
+Yeni /workbench farklı bir tasarım kullanır; bu dosya eksikliğinden kaynaklanmaz. Özgün tema dosyaları ve yeni işlevler korunur. Yeni ekranın görsel yönü kullanıcı geri bildirimiyle ayrıca kararlaştırılacaktır.
+Eksik eski test/bakım/migration/not dosyaları docs/original-reference altında çalıştırılmayan referans metinleri olarak korunur. Gömülü APIanahtarı paket kopyasında temizlendi. Kimlikleri/borç formatını değiştiren veya satış geçmişini silen eski davranışlar güncel çekirdeğin üzerine kopyalanmadı.
+export_github.py bütün gerekli güncel kaynakları, yeni dosyaları, CSS/şablon/font/test ve dokümanları manifestli ZIP'e alır. Gerçek anahtarlar, veri, yüklemeler ve çalışma ortamı GitHub paketine girmez. Her giriş byte/hash ile doğrulanır; GitHub'a bağlanmaz ve push yapmaz. Kullanıcı kendi hesabından istediği zaman inceleyip gönderebilir.
+
+9. SIRADAKİ GERÇEK İŞLER
+- Kullanıcının istediği özgün görsel tema yönünü yeni satış/stok akışına uyarlamak.
+- Gerçek etiket/yazıcı/okuyucu ve atölyede birkaç beden/renkle kontrollü pilot.
+- PostgreSQL üzerinde eşzamanlı stok, iade, limit ve tekrar gönderim testleri. Docker'da WSLeksik; Windowsözellikleri kurulmadı veya sistem yeniden başlatılmadı.
+- Gerçek personel rollerini ve operasyon izinlerini işletmede denemek; sahibin MFAkurulumunu kendi cihazında tamamlaması.
+- Müşteri adı/ünvan/vergi bilgisi snapshotı, faturaya tahsilat dağıtımı gerekiyorsa ayrı iş kuralı; maliyet/kâr ve gider raporları henüz tamamlanmış muhasebe sistemi değildir.
+- Atölye termin/tedarikçi hesabı, rota önceliği ve üretim maliyeti iş akışlarının ayrıntılandırılması.
+- Görsel/dokümandan stok önerisi için AI ayrı onaylı modül olabilir. Model görünmeyen parçaları kesin sayamaz; öneri insanın beden/miktar onayıyla mal kabul taslağına dönüşmeli. Hesap ve stok doğrusu deterministik defterde kalmalıdır.
+- HTTPS/proxy, veri göçü, ayrı anahtar yedeği/rotasyonu, izleme, güncel bağımlılık denetimi ve bağımsız erişim testi; sonra barındırma kararı.
+
+OTURUM ŞEFFAFLIĞI
+Oturum hedefi08:49–14:49UTC altı saatlik yerel geliştirmeydi. Bir tarayıcı dosya seçimi çağrısı yaklaşık4saat24dakika dönmedi; bu bekleyiş sırasında ana ajan yeni araç çağrısı yapamadı. Altajanlar kendi güvenlik/denetim/belge işlerini tamamladı. Bu nedenle altı saatin tamamında kesintisiz aktif ana ajan çalışması yapıldığı iddia edilmiyor. Bekleme sonrası entegrasyon ve gerçek tarayıcı kontrolleri tamamlandı.

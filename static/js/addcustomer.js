@@ -29,10 +29,10 @@ document.addEventListener("DOMContentLoaded", function () {
     const tr = document.createElement("tr");
 
     tr.innerHTML = `
-      <td>${customer.name}</td>
-      <td>${customer.phone}</td>
+      <td>${BrivaDOM.escapeHtml(customer.name)}</td>
+      <td>${BrivaDOM.escapeHtml(customer.phone)}</td>
       <td>
-        <button class="btn btn-danger btn-sm" data-id="${customer.id}">Sil</button>
+        <button class="btn btn-danger btn-sm" data-id="${BrivaDOM.escapeHtml(customer.id)}">Sil</button>
       </td>
     `;
 

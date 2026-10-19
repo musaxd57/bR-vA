@@ -108,28 +108,36 @@ function renderTable() {
                 // Bayi Listesi
                 tr.innerHTML = `
                     <td>-</td>
-                    <td>${item.name}</td>
+                    <td>${BrivaDOM.escapeHtml(item.name)}</td>
                     <td colspan="3"><span class="badge">Bayi</span></td>
-                    <td><button class="sil-btn" onclick="deleteCompany(${item.id})">Sil</button></td>
+                    <td><button class="sil-btn js-delete-company" type="button">Sil</button></td>
                 `;
+                tr.querySelector('.js-delete-company').addEventListener('click', () => {
+                    if (typeof window.deleteCompany === 'function') window.deleteCompany(item.id);
+                });
             } else {
                 // Kullanıcı Listesi
                 const isChecked = selectedUserIds.has(item.id) ? "checked" : "";
+                const ownerProtected = ['admin', 'owner'].includes(item.role);
                 
                 tr.innerHTML = `
                     <td>
                         <input type="checkbox" class="custom-checkbox user-cb" 
-                               data-id="${item.id}" ${isChecked}>
+                               data-id="${BrivaDOM.escapeHtml(item.id)}" ${isChecked}>
                     </td>
-                    <td>${item.username}</td>
-                    <td><span style="background:rgba(255,255,255,0.1); padding:2px 8px; border-radius:4px;">${item.role || '-'}</span></td>
-                    <td>${item.company || '-'}</td>
-                    <td>${item.phone || '-'}</td>
+                    <td>${BrivaDOM.escapeHtml(item.username)}<br><small>${item.active === false ? 'Erişim kapalı' : 'Aktif'}</small></td>
+                    <td><span style="background:rgba(255,255,255,0.1); padding:2px 8px; border-radius:4px;">${BrivaDOM.escapeHtml(item.role || '-')}</span></td>
+                    <td>${BrivaDOM.escapeHtml(item.company || '-')}</td>
+                    <td>${BrivaDOM.escapeHtml(item.phone || '-')}</td>
                     <td>
-                        <button class="duzenle-btn" onclick='openEditUser(${JSON.stringify(item)})'><i class="ri-edit-line"></i></button>
-                        <button class="sil-btn" onclick="deleteUser(${item.id})"><i class="ri-delete-bin-line"></i></button>
+                        ${ownerProtected ? '<span>İşletme sahibi · Profilinden yönetilir</span>' : `<button class="duzenle-btn js-edit-user" type="button" title="Çalışanı düzenle"><i class="ri-edit-line"></i></button>
+                        <button class="sil-btn js-access-user" type="button">${item.active === false ? 'Erişimi aç' : 'Erişimi kapat'}</button>`}
                     </td>
                 `;
+                if (!ownerProtected) {
+                    tr.querySelector('.js-edit-user').addEventListener('click', () => window.openEditUser(item));
+                    tr.querySelector('.js-access-user').addEventListener('click', () => window.setUserAccess(item));
+                }
             }
             tableBody.appendChild(tr);
         });
@@ -265,7 +273,7 @@ mudurForm.addEventListener("submit", async (e) => {
     e.preventDefault();
     const data = {
         name: document.getElementById("mudurIsim").value.trim(),
-        password: document.getElementById("mudurSifre").value.trim(),
+        password: document.getElementById("mudurSifre").value,
         company: document.getElementById("mudurBayi").value.trim(),
         phone: document.getElementById("mudurphone").value.trim(),
         role: "manager"
@@ -295,19 +303,28 @@ mudurForm.addEventListener("submit", async (e) => {
     }
 });
 
-// Kullanıcı Sil
-window.deleteUser = async function(id) {
-    if (!confirm("Kullanıcı silinecek. Emin misiniz?")) return;
+// Kimlik ve işlem geçmişi korunur; yalnızca erişim kapatılır/açılır.
+window.setUserAccess = async function(user) {
+    const enabled = user.active === false;
+    const reason = window.prompt(`${user.username}: erişimi ${enabled ? 'açma' : 'kapatma'} nedeni (3–240 karakter)`);
+    if (reason === null) return;
+    if (reason.trim().length < 3 || reason.trim().length > 240) {
+        showMessage('Lütfen 3–240 karakterlik bir neden yazın.', 'error'); return;
+    }
     try {
-        const res = await fetch(`/deleteuser/${id}`, { method: "DELETE" });
+        const res = await fetch(`/api/account-security/employees/${encodeURIComponent(user.id)}/access`, {
+            method: 'POST', headers: { 'Content-Type': 'application/json' },
+            body: JSON.stringify({ enabled, reason: reason.trim() })
+        });
+        const result = await res.json();
         if (res.ok) {
-            users = users.filter(u => u.id !== id);
-            selectedUserIds.delete(id);
+            user.active = enabled;
+            selectedUserIds.delete(user.id);
             renderTable();
             updateStats(users);
-            showMessage("Kullanıcı silindi", "success");
+            showMessage(enabled ? 'Çalışanın erişimi açıldı.' : 'Erişim kapatıldı. Açık oturumlar sonlandırıldı.', 'success');
         } else {
-            showMessage("Silinemedi", "error");
+            showMessage(result.error?.message || 'Erişim güncellenemedi.', 'error');
         }
     } catch (err) { showMessage("Hata", "error"); }
 };
@@ -420,12 +437,15 @@ function updateStats(list) {
 
     if(statMudurs) statMudurs.textContent = mudurCount;
     if(statBayis) statBayis.textContent = uniqueCompanies;
-    if(statUsers) statUsers.textContent = list.length;
+    if(statUsers) statUsers.textContent = list.filter(user => user.active !== false).length;
 }
 
 function showMessage(text, type = "success") {
     const div = document.createElement("div");
-    div.innerHTML = `<i class="ri-${type === 'success' ? 'checkbox-circle' : 'error-warning'}-line"></i> ${text}`;
+    const icon = document.createElement('i');
+    icon.className = type === 'success' ? 'ri-checkbox-circle-line' : 'ri-error-warning-line';
+    div.appendChild(icon);
+    BrivaDOM.appendText(div, text);
     Object.assign(div.style, {
         position: "fixed", top: "20px", right: "20px",
         padding: "1rem 1.5rem", borderRadius: "10px",

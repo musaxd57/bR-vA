@@ -1,0 +1,173 @@
+BRIVA — MASAÜSTÜ ORİJİNAL KAYNAK / GIT BAŞLANGICI / GELİŞTİRME FARKLARI
+19 Ekim 2026
+
+Karşılaştırılan kaynaklar
+1. Kullanıcının gösterdiği salt okunur orijinal:
+   C:\Users\MUSA CINAR\OneDrive\Desktop\envaner
+2. Yerel Git başlangıcı: 5a2df97aadc07f906621ec291cfd688be4901ff0
+3. Aynı depodaki mevcut yerel geliştirme dosyaları.
+Dosya adı models.py'dir; model.py adlı başka bir kaynak varsayılmadı.
+
+Bu denetim ana uygulama kodunu değiştirmedi, orijinali çalıştırmadı, şema
+komutlarını uygulamadı, hiçbir dosya silmedi ve GitHub'a bağlanmadı/göndermedi.
+.env, .git içeriği, instance, uploads ve özel PDF/veriler açılmadı.
+test_api.py açılmadı, içindeki anahtar okunmadı/çıktılanmadı/kopyalanmadı.
+O dosya hakkında yalnız ana ajanın anahtar bulunduğu bilgisi dikkate alındı.
+
+Yöntem
+models.py, app.py ve db_utils.py kaynakları ast.parse ile ayrıştırıldı;
+satır/yorum farkları yerine fonksiyon/sınıf gövdeleri, alanlar, dekoratörler,
+çağrılar ve üst seviye işlemler karşılaştırıldı. Git show yalnız yerel commit
+içeriğini okudu. Anahtar veya parola olabilecek üst seviye literal değerleri
+çıktıya alınmadı; gerekli yerlerde yalnız değişken/çağrı isimleri çıkarıldı.
+update_db_schema.py ve 811936be5ee5 migration kaynağı AST ile incelendi;
+salt okunur yapılacaklat.md iddiaları uygulama koduyla karşılaştırıldı.
+Kaynak okumak, orijinal uygulamanın tüm akışlarının test edildiği anlamına gelmez.
+
+AST özeti (Masaüstü ile Git başlangıcı)
+  models.py: 16 üst seviye sınıf/fonksiyon; 13 aynı, 3 değişmiş, yeni/kayıp yok.
+  app.py: 97 üst seviye sınıf/fonksiyon; 88 aynı, 8 değişmiş, 1 yeni, kayıp yok.
+  db_utils.py: 81 fonksiyon; 72 aynı, 7 değişmiş, 2 yeni, kayıp yok.
+Bu sayılar yeni geliştirmeyle karşılaştırılınca kaybolmuş kullanıcı özelliği
+sayısı değildir. Masaüstü sürümünde Git'e henüz gelmemiş farkları ayırır.
+
+GERÇEK İŞLEV FARKLARI VE YENİ ÇEKİRDEKTEKİ DURUM
+
+A. Son geliş tarihi — özgün sürümde var, aynı ürün-kartı alanı yenide yok
+Masaüstü models.py:105 Product.last_arrival DateTime alanı eklenmiş.
+db_utils.py:690 ürün oluştururken, 2100 rafa stok eklerken ve 2288 eski Excel
+ithalinde datetime.utcnow() yazılıyor. app.py:2197 query_product ve 2629
+get_products_route cevaplarında sunuluyor. static/js/storage.js:1107,1205,
+2766–2767 listede/sorguda gösteriyor.
+
+Mevcut eski Product modelinde bu alan yok; eski arşiv API'si de alanı dönmüyor.
+Yeni çekirdek gerçek mal kabullerini ayrı Receipt.created_at ile saklıyor
+(briva_core/models.py yaklaşık120–132; service.serialize_receipt yaklaşık1204).
+Bu kayıtlar yeni çalışma ekranının kabul/hareket geçmişinde mevcut. Ancak
+model kartında 'son mal kabul tarihi' diye tek özet alan birebir eklenmedi.
+Bu görünüm farkı iş listesinde açık tutulmalı; yeni veri yok olmuş değildir.
+Özgün last_arrival ürün ilk oluşturulduğunda da set edildiği için onun anlamı
+her zaman fiziksel mal kabulü değildir. İleride gerçek son kabulü Receipt
+kayıtlarından türetmek, ürün yaratılma tarihini geliş sanmaktan daha doğrudur.
+
+B. Seri/tekleme rafı — ek bir alan var, kullanıcı yönetimi tamamlanmış değil
+Masaüstü models.py:60 Shelf.type, varsayılan 'seri', NOT NULL.
+db_utils.py:2006 add_stock_to_shelf_db ek series_count parametresi alıyor;
+seri sayısını ürünün beden reçetesiyle çarpıp parça matrisine dönüştürüyor.
+2044 civarında seri rafında manuel beden miktarlarına çarpan kontrolü yapıyor.
+
+Masaüstü add_shelf_db:647 yalnız code/company alıyor; Shelf.type seçtirmiyor.
+app.py get_shelves:2041 yalnız id/code döndürüyor. İncelenen raf ekleme formu/
+JS'de seri/tekleme tür seçimi bulunmadı. Dolayısıyla yapılacaklat.md:37–39'daki
+'tamamlandı' ifadesi bütün kullanıcı akışının kanıtı değildir.
+
+Yeni Location.kind mağaza/depo/raf/kabul/karantina ayrımıdır; seri/tekleme raf
+kullanım kuralıyla aynı şey değildir. Reçeteden matris hesaplama yeni mal kabul
+ekranında mevcut: Beklenen seri adedi → Beklenen matrisi hesapla → Sayılan
+miktara kopyala; kabul edilen gerçek miktar ayrıca doğrulanır. Teklemeler aynı
+matrise girer. Bu nedenle seri sayısından hızlı ürün kabulü kaybolmuş değildir.
+Seri/tekleme rafına yalnız belirli kompozisyon koyma kuralı yenide tanımlı değil;
+kullanıcının tamamı seri gelmiyor ihtiyacıyla birlikte ayrı karar gerektirir.
+
+Özgün algoritma aynen taşınmamalı: yalnız girilmiş bedenleri gezer, reçetedeki
+eksik bedenlerin hepsini aramaz. S1/M2/L2/XL1 reçetesine yalnız M2 yazmak ortak
+çarpan testini geçebilir. Önceki pozitif toplam kontrolü de bu sürümde yok;
+negatif/tamsayı dışı miktarlar için yeni çekirdeğin sıkı doğrulaması korunmalı.
+
+C. En öndeki raf önceliği — davranış farkı gerçek ve açık
+Masaüstü db_utils.py calculate_picking_list:2115 ve process_order_approval:1574
+ürünün raf JSON listesini code metnine göre artan sıralıyor; önerilen raflardan
+otomatik beden stoklarını düşürüyor. Bu, Git başlangıcından ek bir davranış.
+'En düşük numara' ifadesine rağmen sıralama natural sayı sıralaması değildir:
+örneğin A10 metni A2'den önce gelir. Bu fiziksel yol/öncelik haritası değildir.
+
+Yeni çekirdek kaynak raf tahsislerini ayrı PickAllocation kayıtlarıyla ayırır,
+rezervasyon yapar, gerçek raf barkodunu ve parça sayısını doğrular, satışta aynı
+kaynak raflardan düşer; başka mağazayı veya karantinayı birleştirmez.
+Ancak briva_core/service.py _lock_stock:571–583 variant_id/location_id ile
+kilitler ve create_picking_task:1024–1032 bu sırada tahsis yapar. Bu nedenle
+Masaüstü 'raf kodu A→Z önceliği'nin birebir karşılığı yoktur.
+Bu stok hesabı hatası değil, raf seçme/rota önceliği farkıdır. İleride açık
+raf önceliği/rota alanı veya kararlaştırılmış sıralama eklenebilir; kilit alma
+sırası ile iş önceliği birbirine karıştırılmamalı. Bu inceleme kodu değiştirmedi.
+
+D. Varyasyonları otomatik gruplama — güvenli karşılık var; eski GET yazması yok
+Masaüstü yeni db_utils.py fix_variation_consistency:873, barkod kurallarındaki
+is_group işaretli alanlardan grup anahtarı üretip Product.stock_id değerlerini
+değiştiriyor. app.py get_products_route:2598 içinde ürün listesi GET isteğinde
+çağrılıyor; değişiklik varsa commit yapıyor. Kurallar yoksa işlem yapmıyor.
+Not dosyası 'aynı isim' diyor; gerçek kod esas olarak kuralları kullanıyor ve
+ancak anahtar boşsa isim fallback yapıyor. Herhangi aynı isim daima aynı grup
+olur şeklindeki yorum kaynakla tam eşleşmiyor.
+
+Yeni model → renk/beden varyantları ilişkisi kalıcı model_id ile açık kurulur;
+reçete sürümleri ve barkod kimliği değişmez. Ürün listesi GET sırasında grup
+kimliğini sessiz yeniden yazmamak bilinçli güvenlik/veri bütünlüğü tercihidir.
+Eski otomatik regroup motoru 'eksik dosya' diye yeni çalışma yoluna alınmamalı.
+Eski stock_id gruplarına dönüşüm yapılacaksa ayrı önizlemeli/yedekli migration
+işidir. Kullanıcı sıfırdan başlayacağı için mevcut arşiv otomatik taşınmadı.
+
+E. Ürün/grup silme — özgün sürümde eklenmiş, aynen geri getirilmeyecek
+Masaüstü yeni app.py:2943 /product/delete_group/<stock_id> DELETE yolu ve
+db_utils.py:941 delete_product_group vardır. Grup içindeki ürünleri VE onlara
+ait Sale satırlarını fiziksel siler. delete_product:967 tek üründe de geçmiş
+satışları ayrıca siler. Bu, Git başlangıcından farklı bir davranıştır.
+
+Yeni çekirdeğin append-only satış/stok/cari geçmişiyle uyumlu değildir. Eski
+silme yolunun yeni sistemde bulunmaması gizlenecek bir özellik eşitliği değildir;
+geçmişi koruma tercihidir. Gerektiğinde stok ve geçmişi silmeyen ürün arşivleme/
+pasifleştirme ayrı tasarlanabilir. Bu rapor hiçbir ürün, satış veya dosyayı silmedi.
+
+F. Şirket izolasyonu düzeltmeleri — yenide mevcut veya güçlendirilmiş
+Masaüstü app.py delete_customer/delete_color/delete_category/delete_shelf ve
+get_all_users sorgularına şirket filtresi eklemiş. Yeni uygulamada merkezi
+resource guard/DB kimliği ve birçok sorguda doğrudan şirket filtresi var.
+Bu düzeltmeler kaybolmuş kabul edilmemeli. Eski yazma uçları normal çalışmada
+emekli; çalışan silme yerine hesabı kapatma ve oturum iptali kullanılıyor.
+
+Masaüstü delete_user helper'ı artık (user_id, company_id) bekliyor fakat
+app.py delete_user_route:1750 hâlâ tek argümanla çağırıyor. Bu sözleşme uyumsuzluğu
+da eski kodu körlemesine kopyalamanın doğru olmadığını gösterir. Çağrı çalıştırılmadı.
+
+G. Customer.debt default farkı — aktarılacak bir özellik değil
+Masaüstü models.py:147 Customer.debt default=dict yerine default=lambda: []
+yapılmış. Diğer eski cari işlevleri sözlük .get ve para birimi anahtarları
+bekliyor. Liste default'u cari sözleşmesini bozabilir. Mevcut eski modelde
+default=dict korunuyor; yeni cari bakiye AccountMovement toplamından hesaplanır.
+Bu farkı taşımamak davranış kaybı değil, yanlış veri tipini taşımamaktır.
+
+H. Ek şema dosyaları ve başlangıç yan etkileri
+update_db_schema.py doğrudan sqlite3 ALTER TABLE ile Product.last_arrival ve
+Shelf.type ekliyor. Migration 811936be5ee5 aynı iki alanı ekliyor; down_revision
+91d9647e4196. İki yaklaşım birden uygulanırsa aynı sütunu tekrar ekleme riski var.
+Hiçbiri bu incelemede çalıştırılmadı; yeni çekirdeğin additive upgrade-local
+komutuna veya orijinal veri dosyasına otomatik uygulanmamalı.
+Ana ajan orijinal ek kaynakların korunması/anahtarlı testin ayıklanmasını yönetiyor.
+
+Masaüstü app.py:89–90 import sırasında db.create_all çağırıyor; __main__ bölümünde
+örnek kullanıcı/müşteri/tanım oluşturma kodları var. Bunlar kullanıcının gerçek
+kurulumunda sessiz veri yaratabilecek yan etkilerdir. Yeni kurulum açık manage.py
+init/create-admin ile yapılır. Eski otomatik başlangıcın kaldırılması özellik
+kaybı gibi geri alınmamalı. Olası örnek parola değerleri okunur çıktıya alınmadı.
+
+ARAYÜZ/KAYNAK PAKETİ İÇİN KAYIT
+- Ana ajanın 99 dosyalık envanteri:
+  .analysis-evidence/original-source-comparison-20261019.json
+- Bu inceleme onun yerine bütün 99 dosyanın görsel eşitliğini iddia etmez.
+- static/storage.css Masaüstü kompakt tasarım farkını ana ajan koruyor.
+- Son geliş tarihi satırları eski static/js/storage.js içinde bulundu; yeni
+  çalışma ekranının tasarımı farklı olduğu için eski ekranla piksel eşitliği yok.
+- Kullanıcının manuel kaynak paketi talebi GitHub bağlantısı, yetkilendirmesi
+  veya push gerektirmez; bu çalışma bunlardan hiçbirini yapmadı.
+- Anahtarlı test dosyası taşınmamalı. Eksik dosya sayısını sıfırlamak uğruna
+  anahtar, gerçek veri veya eski otomatik şema işlemi pakete etkin konmamalı.
+
+SONUÇ
+Masaüstü Git başlangıcından daha ileri bazı eski özellikler içeriyor. Gerçek
+görünüm/iş kuralı farkları: model kartındaki son geliş özeti, raf kodu önceliği,
+seri/tekleme rafına özel yerleştirme kuralı. Bunlar tamamlanmış gibi gösterilmez.
+Seri sayısıyla hızlı kabul, varyasyon grupları, raf stoğu düşümü ve tenant
+izolasyonu ise yeni çekirdekte karşılığı olan veya daha güvenli tasarlanmış
+işlerdir. Tarihçeyi fiziksel silme ve GET sırasında kimlikleri değiştirme gibi
+eski davranışlar aynen geri getirilmemelidir. Değerlendirme salt okunur kaynak
+kanıtıdır; bu son fark incelemesi için yeni çalışma testi/deploy yapılmadı.

@@ -17,10 +17,10 @@ document.addEventListener("DOMContentLoaded", function () {
 
         // DİKKAT: Sil butonuna hem orijinal sınıfları hem de 'delete-btn' sınıfını ekliyoruz.
         tr.innerHTML = `
-            <td>${color.code}</td>
-            <td>${color.name}</td>
+            <td>${BrivaDOM.escapeHtml(color.code)}</td>
+            <td>${BrivaDOM.escapeHtml(color.name)}</td>
             <td>
-                <button class="btn btn-danger btn-sm delete-btn" data-code="${color.code}">Sil</button>
+                <button class="btn btn-danger btn-sm delete-btn" data-code="${BrivaDOM.escapeHtml(color.code)}">Sil</button>
             </td>
         `;
         tableBody.prepend(tr); // Yeni rengi tablonun en üstüne ekle
@@ -106,7 +106,7 @@ document.addEventListener("DOMContentLoaded", function () {
                 button.disabled = true;
                 button.textContent = '...';
 
-                const resp = await fetch(`/delete_color/${codeToDelete}`, {
+                const resp = await fetch(`/delete_color/${encodeURIComponent(codeToDelete)}`, {
                     method: "DELETE"
                 });
 

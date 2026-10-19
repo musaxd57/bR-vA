@@ -1,0 +1,25 @@
+
+import sqlite3
+import os
+
+db_path = os.path.join("instance", "data.db")
+conn = sqlite3.connect(db_path)
+cursor = conn.cursor()
+
+try:
+    # Product tablosuna last_arrival sütununu ekle
+    cursor.execute("ALTER TABLE product ADD COLUMN last_arrival DATETIME;")
+    print("Product tablosuna last_arrival eklendi.")
+except sqlite3.OperationalError:
+    print("last_arrival sütunu zaten mevcut.")
+
+try:
+    # Shelf tablosuna type sütununu ekle
+    cursor.execute("ALTER TABLE shelf ADD COLUMN type VARCHAR(20) DEFAULT 'seri' NOT NULL;")
+    print("Shelf tablosuna type eklendi.")
+except sqlite3.OperationalError:
+    print("type sütunu zaten mevcut.")
+
+conn.commit()
+conn.close()
+print("Veritabanı güncelleme tamamlandı.")

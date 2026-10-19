@@ -60,14 +60,14 @@ document.addEventListener("DOMContentLoaded", () => {
             const hasDebt = customer.debt && Object.values(customer.debt).some(amount => amount > 0);
             
             const collectButtonHTML = hasDebt 
-                ? `<button class="btn-primary btn-collect-payment" data-customer-id="${customer.id}" title="Tahsilat Yap" style="padding: 6px 12px;"><i class="ri-hand-coin-line"></i></button>`
+                ? `<button class="btn-primary btn-collect-payment" data-customer-id="${BrivaDOM.escapeHtml(customer.id)}" title="Tahsilat Yap" style="padding: 6px 12px;"><i class="ri-hand-coin-line"></i></button>`
                 : '';
             
-            const historyButtonHTML = `<button class="btn-secondary btn-view-history" data-customer-id="${customer.id}" title="İşlem Geçmişi" style="padding: 6px 12px;"><i class="ri-history-line"></i></button>`;
+            const historyButtonHTML = `<button class="btn-secondary btn-view-history" data-customer-id="${BrivaDOM.escapeHtml(customer.id)}" title="İşlem Geçmişi" style="padding: 6px 12px;"><i class="ri-history-line"></i></button>`;
 
             row.innerHTML = `
-                <td data-label="Müşteri Adı"><strong>${customer.name}</strong></td>
-                <td data-label="Telefon">${customer.phone}</td>
+                <td data-label="Müşteri Adı"><strong>${BrivaDOM.escapeHtml(customer.name)}</strong></td>
+                <td data-label="Telefon">${BrivaDOM.escapeHtml(customer.phone)}</td>
                 <td data-label="Borç Detayları">${debtDetails}</td>
                 <td data-label="İşlemler" style="text-align: center; display: flex; gap: 8px; justify-content: center;">
                     ${collectButtonHTML}
@@ -88,7 +88,7 @@ document.addEventListener("DOMContentLoaded", () => {
         return Object.entries(debtObject)
             .filter(([, amount]) => amount > 0)
             .map(([currency, amount]) => 
-                `<strong style="color: var(--danger-color);">${amount.toFixed(2)} ${currency}</strong>`
+                `<strong style="color: var(--danger-color);">${BrivaDOM.finiteNumber(amount).toFixed(2)} ${BrivaDOM.escapeHtml(currency)}</strong>`
             ).join('<br>');
     }
 
@@ -164,7 +164,7 @@ document.addEventListener("DOMContentLoaded", () => {
             if (data.success) {
                 renderHistoryTable(data.history);
             } else {
-                historyTableBody.innerHTML = `<tr><td colspan="5" style="text-align:center; color:red;">${data.message}</td></tr>`;
+                historyTableBody.innerHTML = `<tr><td colspan="5" style="text-align:center; color:red;">${BrivaDOM.escapeHtml(data.message)}</td></tr>`;
             }
         } catch (error) {
             historyTableBody.innerHTML = `<tr><td colspan="5" style="text-align:center; color:red;">Sunucu hatası!</td></tr>`;
@@ -185,15 +185,15 @@ document.addEventListener("DOMContentLoaded", () => {
             const amountClass = isDebit ? 'danger-color' : 'success-color';
             const amountSign = isDebit ? '-' : '+';
             const noteOrId = t.sale_id
-                ? `Satış: <a href="/generate_transaction_pdf/${t.sale_id}" target="_blank" title="Satış Fişini Gör">${t.sale_id.substring(0, 8)}...</a>`
-                : t.note;
+                ? `Satış: <a href="/generate_transaction_pdf/${encodeURIComponent(String(t.sale_id))}" target="_blank" rel="noopener noreferrer" title="Satış Fişini Gör">${BrivaDOM.escapeHtml(String(t.sale_id).substring(0, 8))}...</a>`
+                : BrivaDOM.escapeHtml(t.note);
 
             return `
                 <tr>
-                    <td data-label="Tarih">${t.date}</td>
+                    <td data-label="Tarih">${BrivaDOM.escapeHtml(t.date)}</td>
                     <td data-label="İşlem Tipi" style="font-weight: 500; color: var(--${amountClass});">${typeText}</td>
-                    <td data-label="Tutar" style="font-weight: 600;">${amountSign} ${t.amount.toFixed(2)} ${t.currency}</td>
-                    <td data-label="Personel">${t.user}</td>
+                    <td data-label="Tutar" style="font-weight: 600;">${amountSign} ${BrivaDOM.finiteNumber(t.amount).toFixed(2)} ${BrivaDOM.escapeHtml(t.currency)}</td>
+                    <td data-label="Personel">${BrivaDOM.escapeHtml(t.user)}</td>
                     <td data-label="Açıklama">${noteOrId}</td>
                 </tr>
             `;

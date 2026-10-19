@@ -79,9 +79,9 @@ function addCategoryRow(cat) {
   const tr = document.createElement("tr");
   tr.dataset.id = cat.id;
   tr.innerHTML = `
-    <td>${cat.name}</td>
-    <td>${fmtSizes(cat.sizes || [])}</td>
-    <td><button class="delete-cat-btn" data-id="${cat.id}">Sil</button></td>
+    <td>${BrivaDOM.escapeHtml(cat.name)}</td>
+    <td>${BrivaDOM.escapeHtml(fmtSizes(cat.sizes || []))}</td>
+    <td><button class="delete-cat-btn" data-id="${BrivaDOM.escapeHtml(cat.id)}">Sil</button></td>
   `;
   categoriesTbody.appendChild(tr);
 }

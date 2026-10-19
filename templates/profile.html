@@ -1,6 +1,7 @@
 <!DOCTYPE html>
 <html lang="tr">
 <head>
+    {% include '_security_head.html' %}
   <meta charset="UTF-8" />
   <meta name="viewport" content="width=device-width, initial-scale=1.0"/>
   <title>envaner | Profil Yönetimi</title>
@@ -34,11 +35,11 @@
           <h3><i class="ri-user-line"></i>Kişisel Bilgiler</h3>
           <div class="form-group">
             <label for="username">Kullanıcı Adı</label>
-            <input id="username" name="username" type="text" required maxlength="20">
+            <input id="username" name="username" type="text" required minlength="2" maxlength="100" autocomplete="username">
           </div>
           <div class="form-group">
             <label for="phone">Telefon Numarası</label>
-            <input id="phone" name="phone" type="tel" placeholder="Örn: +90 555 123 4567">
+            <input id="phone" name="phone" type="tel" maxlength="15" placeholder="Örn: +905551234567" autocomplete="tel">
           </div>
           <div class="form-actions">
             <button type="submit" class="btn btn-primary">Bilgileri Güncelle</button>
@@ -50,15 +51,16 @@
           <h3><i class="ri-lock-password-line"></i>Şifreyi Değiştir</h3>
           <div class="form-group">
             <label for="current-password">Mevcut Şifre</label>
-            <input id="current-password" name="current_password" type="password" required autocomplete="current-password">
+            <input id="current-password" name="current_password" type="password" required maxlength="256" autocomplete="current-password">
           </div>
           <div class="form-group">
             <label for="new-password">Yeni Şifre</label>
-            <input id="new-password" name="new_password" type="password" required autocomplete="new-password">
+            <input id="new-password" name="new_password" type="password" required minlength="12" maxlength="256" autocomplete="new-password" aria-describedby="new-password-help">
+            <small id="new-password-help">12–256 karakter. Şifre değiştiğinde diğer açık oturumlar kapanır.</small>
           </div>
           <div class="form-group">
             <label for="confirm-password">Yeni Şifre (Tekrar)</label>
-            <input id="confirm-password" name="confirm_password" type="password" required autocomplete="new-password">
+            <input id="confirm-password" name="confirm_password" type="password" required minlength="12" maxlength="256" autocomplete="new-password">
           </div>
           <div class="form-actions">
             <button type="submit" class="btn btn-primary">Şifreyi Değiştir</button>

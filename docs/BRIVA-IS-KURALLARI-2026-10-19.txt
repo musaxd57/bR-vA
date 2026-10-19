@@ -1,0 +1,181 @@
+BRIVA — doğrulanan ihtiyaçlar ve geliştirme tasarımı
+Tarih: 19 Ekim 2026, Europe/Istanbul
+İncelenen Git commit: 5a2df97aadc07f906621ec291cfd688be4901ff0
+
+DURUM
+Bu belge çalışan uygulamanın tamamlandığını iddia etmez. Mevcut kaynak,
+ayrı sentetik deneyler ve kullanıcının bu sohbetteki açıklamalarına dayanır.
+Ana uygulama akışları bu inceleme sırasında değiştirilmedi.
+GitHub'a gönderim, dağıtım, bulut kaynağı açma veya ücretli AI çağrısı yapılmadı.
+Kaynaklar ve gerçek yerel stok veritabanı deneme verisi olarak kullanılmadı.
+
+1. KULLANICININ NETLEŞTİRDİĞİ İHTİYAÇLAR
+- Kendi markası için kullanılacak; ürünler sıfırdan girilecek.
+- Başlangıç ve ana ürün giriş süreci Excel'e dayanmayacak.
+- Barkodlar bu uygulamada üretilecek, etiketler atölyeye verilecek.
+- Etiket askıdaki ürünün yaka/askı etiketinde veya tek gömlek ambalajının
+  arkasında yer alacak. Tek gömlek ambalajı, altılı seri paketi demek değildir.
+- Her kıyafete model+renk+bedeni tanımlayan tekli ürün etiketi öneriliyor.
+- Standart seri örneği S1/M2/L2/XL1; atölyeden teklemeler kesinlikle gelir.
+- Müşteriye bazen standart reçeteden farklı az sayıda parça verilebilir.
+- Fiyat ürün başına varsayılan olarak gelmeli; yetkili tarafından değiştirilebilir
+  ve hangi ürünün hangi fiyattan verildiği sonradan görülebilmeli.
+- Öncelikler: barkod çakışmaması, doğru bedenden doğru adet düşümü,
+  seri/kalan parça görünümü, güvenlik, raf toplama, ortak stok/cari.
+- OpenAI görsel analiz ve uyarılar değerlendirilecek; kesin stok hesabı
+  modelin tahminine bırakılmayacak.
+- Canlıya geçiş ancak en sonda; Railway veya Vercel ve Supabase seçenekleri.
+
+2. BARKOD VE ÜRÜN KİMLİĞİ
+Model bir kere tanımlanır; renkler ve bedenler toplu seçilir.
+3 renk x 4 beden için 12 varyant otomatik açılır; 12 ayrı ürün formu gerekmez.
+Etiket üretilmeden önce bu kimlikler uygulamada sıfır stokla kaydedilir.
+
+İnsan tarafından okunacak SKU kuralı ile kalıcı okutma kimliği ayrıdır.
+Örnek SKU: BRV-0125-SY-M. Kod örnektir, kesin kural kararı değildir.
+Tekli barkod bir varyanta bağlanır; seri barkodu belirli reçete sürümüne bağlanır.
+Barkodun hedefini sunucu çözer. İstemcinin gönderdiği birim/adet körlemesine
+kabul edilmez. Aynı barkod farklı ekran modlarında farklı ürün anlamına gelmez.
+
+Aynı model/renk/bedendeki 100 kıyafetin ortak varyant barkodu taşıması
+çakışma değildir. İki farklı varyant aynı barkoda bağlanamaz.
+Fiziksel paket iki kez alınmasın/satılmasın diye paket takibi gerekirse
+pakete eşsiz kimlik verilir; bütün kıyafetleri tek tek seri numaralamak şart değil.
+
+Veritabanı benzersizlik kısıtı + güvenli sayaç tahsisi gerekir.
+Önce sorgula/sonra ekle tek başına eşzamanlılık güvencesi değildir.
+Fiyat, stok, raf, alınan miktar ve cari bakiye barkodun içine yazılmaz.
+Barkod, bu değişen bilgilerin saklandığı kaydın kalıcı anahtarıdır.
+Ürün düzenleme barkodu değiştirmez; eski etiketler eşleme kaydıyla çözülür.
+Geçmiş satıştaki ürün kodu/fiyat/beden/reçete snapshot'ı sonradan değiştirilmez.
+
+3. ETİKETİN YERİ VE BASKI
+Tekli ürün kodu her kıyafette bulunur. Gerçek çoklu seri paketi varsa seri
+etiketi onun dışındadır; bir seri barkodu bütün kıyafetlere basılmaz.
+Tek gömleğin poşetinde seri barkodu kullanılmaz.
+Etiket: model, renk adı/kodu, beden, okunabilir kod, barkod; fiyat opsiyonel.
+Seri etiketi: reçete ve toplam parça sayısı. Raf etiketi ayrı kimlik türü.
+Atölye çıktısı: fotoğraf, üretim emri, renk-beden etiket adetleri ve talimat.
+Etiket basmak, yeniden basmak veya atölyeye vermek stok yaratmaz.
+Yazıcı ölçüsü, DPI, hizalama ve fiziksel okutma en son donanım testiyle doğrulanır.
+
+4. ÜRETİM PLANI VE İLK STOK
+Akış: model/varyant -> üretim planı -> etiket işi -> mal kabul -> yerleştirme.
+Plan beklenen miktardır. Yalnız gerçek kabul edilen miktar stoğa girer.
+Teklemeler hata/istisna değil, mal kabulün normal kayıt biçimidir.
+
+Hızlı giriş seçenekleri:
+  a) Model+renk için seri sayısı gir -> beklenen beden matrisini doldur.
+  b) Beden bazında gelen parçaları matris halinde toplu gir.
+  c) Üretim emrini okut -> beklenen matris gelsin, yalnız farkları düzelt.
+  d) Varyant barkodlarını okuyarak say; her olayın sonucu ekranda görünür.
+
+Mal kabul: beklenen, beyan edilen, sayılan, kabul edilen, kusurlu ve fark ayrı.
+Bir irsaliye/fotoğraftaki beyan fiziksel sayımın doğrulandığı anlamına gelmez.
+İşlem tekrarında ikinci stok artışı olmamalı.
+Kabul alanı bir stok konumudur; raf ataması sonradan transfer olabilir.
+Rafa yerleştirme ve mağaza/depo transferi fiziksel toplamı artırmaz.
+
+5. TAM SERİ VE KALAN BEDENLER
+Her model/renk/lokasyon/reçete sürümü için kullanılabilir parça esas alınır.
+Kullanılabilir = uygun fiziksel stok - rezervasyon - bloke/karantina payları.
+Tam seri = reçetede pozitif adedi olan bedenlerin stok/adet tam bölümlerinin en küçüğü.
+Kalan_beden = kullanılabilir_beden - tam_seri * reçetedeki_beden_adedi.
+Farklı lokasyonlardaki parçalar transfer olmadan hemen teslim edilebilir tek seri sayılmaz.
+Birden fazla alternatif reçete aynı stoğu kullanıyorsa gösterilen kapasite
+alternatif kapasitedir; bu sayılar bağımsız stokmuş gibi toplanmaz.
+
+Örnek:
+  Plan: S10/M20/L20/XL10 = 60 parça, 10 standart seri.
+  Gelen: S10/M21/L20/XL9 = 60 parça.
+  Sonuç: 9 tam seri + S1/M3/L2/XL0 kalan = 6 kalan parça.
+  Üretim farkı: M1 fazla / XL1 eksik. Toplam60 olduğu için fark gizlenmez.
+
+6. SERİ, TEKLİ VE ÖZEL DAĞILIM SATIŞI
+Tekli barkod -> o bedenden1 parça. Seri barkodu -> sabit reçete bileşenleri.
+Seri barkodu kıyafetin tekli barkodundan otomatik tahmin edilmez.
+Satış görevlisi ürünleri tek tek okutuyorsa gerçek bedenler toplanır;
+isterse tam reçeteyi sağlayan bileşim görsel olarak seri grubunda gösterilir.
+
+Normal seri + M1 -> seri bileşenleri ve ekstra M bir arada hesaplanır.
+XL yerine M -> gerçek S1/M3/L2/XL0 özel dağılımı kaydedilir.
+Standart reçete kalıcı olarak değiştirilmez; bir eksik XL stoktan düşmez.
+Bütün sepet satırları aynı varyant temelinde birleştirilip toplam ihtiyaç doğrulanır.
+
+Varsayılan fiyat ürün başına gelir. Seri toplamı parça fiyatlarıyla hesaplanabilir;
+ayrı toptan fiyat listesi gerekiyorsa açıkça tanımlanır, sessiz indirim yapılmaz.
+Liste fiyatı, uygulanan birim fiyat, döviz, indirim ve değiştiren kullanıcı saklanır.
+Yüksek indirim/manuel fiyat değiştirme yetkiyle sınırlandırılır.
+Para hesabı Decimal/NUMERIC veya kuruş; yuvarlama politikası açık.
+
+7. ORTAK KAYIT VE GÜVENLİK
+Web/okuyucu/sipariş/AI taslağı aynı stok-satış-cari servislerinden geçer.
+Tek transaction sahibi vardır; bildirim yardımcıları arada commit yapmaz.
+Sunucu pozitif tam adet, tanımlı varyant, sonlu fiyat, indirim sınırı,
+izin verilen para birimi ve geçerli durum geçişini doğrular.
+İşlem kimliği tekrar gönderimde ikinci kayıt oluşmasını engeller;
+aynı anahtar+farklı içerik çakışma sayılır.
+Stok satırları işlem içinde kilitlenir/koşullu düşülür, son ürün çift satılmaz.
+İptal ve iade özgün kayda bağlı ters stok/cari hareketi oluşturur.
+Geçmiş hareketleri silerek düzeltme yapılmaz.
+
+Sahip/yönetici/kasa/depo yetkileri sunucuda uygulanır.
+Şirket yerine tek marka kullanılsa da lokasyon/nesne sahipliği zorunludur.
+CSRF, güvenli oturum, giriş hızı sınırı, güvenli HTML ve yükleme koruması gerekir.
+Sahip için2FA, oturum kapatma ve kim-ne-zaman-neden denetim ekranı hedeflenir.
+Excel kullanılmayacaksa uçları sunucuda devre dışı bırakılır; kaynak dosyalar silinmez.
+Etiketteki sayı bir yetki/şifre değildir; kodu bilen yetkisiz stok değiştiremez.
+
+8. RAF TOPLAMA
+Görev: sipariş, lokasyon, raf, varyant, beklenen/okutulan adet ve durum.
+Sunucu pick olaylarını saklar; yanlış beden/raf ve fazla adet reddedilir.
+Bir tekli okutma1 adet, doğrulanmış gerçek paket okutma içerik kadar sayar.
+Bir ürün okutuldu diye10 adetlik satırın tamamı doğrulanmaz.
+Eksik stok tamamlanmış gibi gizlenmez; kısmi teslim ayrı durumdur.
+Kamera tekrar karesi, ağ tekrarı ve kasıtlı aynı varyant okutması farklı olaylardır.
+
+9. AI / GÖRSEL ANALİZ
+OpenAI metin/görsel anlama için değerlendirilecek; API henüz bağlanmadı.
+Görselden nesne sayımı yaklaşık olabilir. Kapalı/örtüşen ürünlerde kesin
+adet vaat edilmez. Görseldeki beden etiketi veya irsaliye de hatalı okunabilir.
+AI çıktı: önerilen eşleme/adet, dayanak belge/görsel, belirsizlik ve kontrol listesi.
+Kullanıcı sayım/teslimi onaylamadan sayım önerisi kesin stoğa dönüşmez.
+Kesin seri/kalan/stok/borç hesaplarını program ve veritabanı yapar.
+AI bu hesapların sonuçlarını açıklamak, fark/riski işaretlemek ve taslak üretmek için kullanılır.
+AI modelinin güven puanı tek başına kayıt kabul ölçütü değildir.
+Model seçimi temsilî gerçek fotoğraf ve belgelerle doğruluk, hata ve gecikme ölçülerek yapılır.
+OpenAI anahtarı sunucudadır; AI'a sınırsız SQL veya bağımsız stok yazma yetkisi verilmez.
+
+10. CANLIYA GEÇİŞ
+Yerel geliştirme -> otomatik test -> Postgres eşzamanlılık testi -> ayrı test ortamı
+-> yazıcı/okuyucu pilotu -> sayım ve cari mutabakatı -> yedekten geri yükleme
+-> ancak bundan sonra canlıya geçiş.
+Flask korunabilir. Railway mevcut yapıya daha az uyarlama isteyen adaydır.
+Vercel Flask'ı da destekler; kalıcı SQLite/uploads yerine dış Postgres/Storage gerekir.
+Supabase Postgres+Storage olarak iki hostla da kullanılabilir; Auth değişimi ayrı karardır.
+Frontend'e DB bağlantı parolası veya service_role/secret anahtarı verilmez.
+Mevcut migration dosyaları silinmeden yeni şema tabanı ve yükseltme yolu doğrulanır.
+
+11. BU TURDAKİ YENİ ÇALIŞTIRILMIŞ MAL KABUL KANITI
+Gerçek yardımcılar ayrı sentetik SQLite üzerinde çağrıldı:
+  add_stock10 -> S10/M20/L20/XL10 ve10 seri;
+  aynı malı add_stock_to_shelf -> S20/M40/L40/XL20 ve20 seri.
+Bu nedenle eski iki uç yeni mal kabul/transfer ayrımı yapılmadan birlikte kullanılmamalı.
+{M:5,L:-3} raf girişi de başarılı dönüp raf toplamını2, beden miktarını5 yaptı.
+Kanıt: .analysis-evidence/intake-95b3ad53/results.json
+Önceki satış kanıtı: .analysis-evidence/sales-e82f9811/results.json
+
+12. UYGULAMA SIRASI
+1) Kaynak/veritabanı koruma, tekrarlanabilir kabul testleri ve ortak doğrulama.
+2) Satış atomikliği, tekli birleştirme/fiyat ve yetki açıkları.
+3) Varyant, barkod ve sürümlü reçete şeması; güvenli yeni başlangıç migrasyonu.
+4) Mal kabul matrisi, hareket defteri ve raf transferi.
+5) Tekli/seri/özel dağılım satışının ortak servise bağlanması.
+6) Etiket merkezi ve miktarlı raf toplama.
+7) Cari, ödeme/iade ve sahibin denetim ekranları.
+8) AI öneri katmanı ve temsili veriyle değerlendirme.
+9) Hedef Postgres, donanım, geri yükleme ve canlıya geçiş testleri.
+
+Belirsiz büyük kararlar sessizce kesinleştirilmeyecek. Özellikle çoklu kapalı
+seri paketlerini tek tek izleme, şube transfer kuralları ve fiyat listeleri
+uygulama aşamasında kullanıcının gerçek işleyişiyle netleştirilecek.

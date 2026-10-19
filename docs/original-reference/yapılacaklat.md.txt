@@ -1,0 +1,51 @@
+# ✅ YAPILACAKLAR LİSTESİ - TAMAMLANDI
+
+Bu listedeki tüm maddeler başarılı bir şekilde koda ve arayüze (HTML/JS) entegre edilmiştir.
+
+---
+
+### 1. Ürün Silme Sistemi (Toplu ve Temiz Silme) - [x]
+*   **Açıklama:** Ürün silindiğinde bağlı tüm satışlar, varyasyonlar ve stok kayıtları temizleniyor.
+*   **Uygulama:** `db_utils.py` içindeki `delete_product` fonksiyonu atomik işlemle güncellendi.
+
+---
+
+### 2. Varyasyon Mantığı Tutarsızlığı - [x]
+*   **Açıklama:** Aynı isimli ürünler otomatik olarak aynı `stock_id` altında toplanıyor.
+*   **Uygulama:** `db_utils.py` dosyasına `fix_variation_consistency` motoru eklendi.
+
+---
+
+### 3. Toplama Kuralı (En Öndeki Raf Önceliği) - [x]
+*   **Açıklama:** Sistem her zaman en düşük raf numarasını (en öndeki raf) önerir.
+*   **Uygulama:** `calculate_picking_list` fonksiyonu alfabetik/sayısal sıralama ile güncellendi.
+
+---
+
+### 4. Toplama Validasyonu (Zorunlu Kontrol) - [x]
+*   **Açıklama:** Kullanıcı manuel raf seçemez, sistemin önerdiği raftan stok düşümü otomatik yapılır.
+*   **Uygulama:** `process_order_approval` fonksiyonu raf stoklarını otomatik düşecek şekilde revize edildi.
+
+---
+
+### 5. Rafa Ürün Ekleme (Seri Giriş Zorunluluğu) - [x]
+*   **Açıklama:** Seri tipi raflara sadece tam set (seri) ürün girişi yapılabilir.
+*   **Uygulama:** `add_stock_to_shelf_db` fonksiyonuna seri kontrolü eklendi.
+
+---
+
+### 6. Raf Yapısının Yeniden Tasarlanması - [x]
+*   **Açıklama:** "Seri Rafları" ve "Tekleme Rafı" ayrımı sisteme eklendi.
+*   **Uygulama:** `Shelf` modeline `type` alanı eklendi ve giriş mantığı buna göre ayrıldı.
+
+---
+
+### 7. Ürün Sorgulama Ekranı Geliştirmesi - [x]
+*   **Açıklama:** Daha kompakt, yatay yapı, küçük görseller ve son geliş tarihi bilgisi eklendi.
+*   **Uygulama:** `storage.html`, `storage.js` ve `storage.css` modern kompakt tasarıma geçirildi.
+
+---
+
+### 8. Güvenlik ve Hack Koruması - [x]
+*   **Açıklama:** Şirketler arası veri izolasyonu sağlandı, kritik açıklar kapatıldı.
+*   **Uygulama:** Tüm silme ve listeleme fonksiyonlarına `company_id` kontrolü eklendi. `SECRET_KEY` env dosyasına taşındı.

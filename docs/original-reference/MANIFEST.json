@@ -1,0 +1,26 @@
+[
+  {
+    "original_path": "test_api.py",
+    "preserved_as": "docs/original-reference/test_api.py.txt",
+    "credentials_redacted": true,
+    "executed": false
+  },
+  {
+    "original_path": "update_db_schema.py",
+    "preserved_as": "docs/original-reference/update_db_schema.py.txt",
+    "credentials_redacted": false,
+    "executed": false
+  },
+  {
+    "original_path": "migrations/versions/811936be5ee5_test.py",
+    "preserved_as": "docs/original-reference/811936be5ee5_test.py.txt",
+    "credentials_redacted": false,
+    "executed": false
+  },
+  {
+    "original_path": "yapılacaklat.md",
+    "preserved_as": "docs/original-reference/yapılacaklat.md.txt",
+    "credentials_redacted": false,
+    "executed": false
+  }
+]

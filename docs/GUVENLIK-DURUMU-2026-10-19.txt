@@ -1,0 +1,234 @@
+BRIVA — yerel güvenlik geliştirmesi ve doğrulama sınırları
+Tarih: 19 Ekim 2026
+
+KAPSAM VE DURUM
+Bu belge yerel kaynak değişikliklerini ve sentetik testleri açıklar; dışarıya
+açık bir üretim sisteminin güvenli olduğuna ilişkin sertifika değildir.
+GitHub push, deploy, ücretli AI çağrısı ve gerçek kullanıcıda MFA etkinleştirme
+yapılmadı. Gerçek kullanıcı parolaları veya stokları test verisi yapılmadı.
+Hiçbir dosya silinmedi. Test kanıtları bellekte veya yeni, korunan dizinlerdedir.
+
+1. UYGULANAN ERİŞİM SINIRLARI
+- Güncel kullanıcı, işletme, rol ve izinler her istekte veritabanından okunur.
+  Çerezde yazan admin/employee değerine tek başına güvenilmez. Yetki değişimi
+  yeni giriş beklemeden sonraki istekte etkili olur.
+- Bütün uygulama uçları varsayılan olarak oturum ister. Ana giriş sayfaları,
+  CSRF token alma ve kısa MFA giriş doğrulaması açık istisnalardır. CSS/JS/font
+  dosyaları açıktır; uploads/ ürün görselleri oturum ve işletme sahipliği ister.
+  Yol normalleştirmesi js/../uploads biçimindeki denemeleri de kapsar.
+- Sahip ekranları, kullanıcı izinlerini değiştirme ve işletme yönetimi sunucuda
+  korunur. Çalışan yönetimi yetkisi admin hesabı veya ek izin oluşturamaz.
+- Müşteri, ürün, sipariş, çalışan ve tanım kimlikleri işletmeyle birlikte
+  sorgulanır. Eksik/başka işletmeye ait kaynaklar aynı şekilde reddedilir.
+- Eski stok, satış, cari ve katalog yazma yolları ana uygulamada varsayılan
+  410 döndürür; yeni /api/v2 ortak servisleri kullanılır. İzole uyumluluk
+  testlerinin BRIVA_ALLOW_LEGACY_WRITES bayrağı üretimde açılmamalıdır.
+- Eski Excel içeri alma ve toplu barkod değiştirme yolları ayrıca kalıcı olarak
+  kapalıdır. Eski AI işlem yolu config bayrağıyla da açılamaz: eski araçların
+  DB'ye doğrudan yazması HTTP gate'ini atlayabilirdi. Model çıktısı stok/cariye
+  yazamaz; gelecekteki salt okunur analiz ayrı servis olarak kurulmalıdır.
+- Yeni çekirdekte satış yapma, satış geçmişi, ürün ekleme, katalog/stok
+  düzenleme ve cari görme ayrı izinlerdir. Kasiyerin kendi satışını doğrulaması
+  müşterinin tüm hesap bakiyesini öğrenmesine izin vermez.
+
+2. CSRF, GİRİŞ VE OTURUMLAR
+- Giriş dahil güvenli olmayan HTTP yöntemleri oturuma bağlı CSRF token ister.
+  HTML formunda csrf_token; JSON isteğinde X-CSRF-Token kullanılır. Token başka
+  tarayıcıdan, eski girişten, farklı origin'den ve geçersiz karakterle alınamaz.
+- Giriş gövdesi 8 KB, kullanıcı adı 100, parola 256 karakterle sınırlandırılır;
+  geçersiz değer parola kontrolüne/DB lookup'a gitmeden reddedilir.
+- Başarılı giriş, parola değişimi ve MFA etkinleştirme çerezi/tokenı yeniler.
+  GET /logout oturumu kapatmaz; kapatma POST ve CSRF ile gerçekleşir.
+- Tarayıcıda rastgele 256 bit oturum yetkisi bulunur; veritabanında yalnız SHA256
+  özeti saklanır. Çıkış ve oturum iptali sunucu kaydını geçersiz kılar; eski
+  çerez yeniden kopyalansa da kullanılamaz. Parola değişimi diğer oturumları
+  geçersiz kılar. Sunucu tarafı azami süre 24 saat, boşta kalma süresi 8 saattir.
+- HttpOnly ve SameSite=Lax çerezleri, no-store özel yanıtlar, nosniff, DENY
+  frame, same-origin referrer ve sınırlandırılmış tarayıcı izinleri uygulanır.
+  HTTPS isteğinde HSTS verilir. Yerel HTTP, Secure çerez ve TLS sağlamaz.
+- İlk parolalı giriş limiti ortak DB'de IP geneli ve IP+normalize kullanıcı adı
+  için atomik tüketilir. Varsayılan pencere ilk denemeden başlayan sabit 300
+  saniyedir; çift başına 8, IP başına 40 deneme. Restart bütçeyi sıfırlamaz.
+  Raw IP/kullanıcı adı tutulmaz; ayrı alan etiketleriyle HMAC-SHA256 kullanılır.
+  Başarı yalnız çift bütçesini, parola+varsa MFA doğrulaması commit edildikten
+  sonra sıfırlar; IP genel bütçesi korunur. Sahte forwarded IP kabul edilmez.
+- Bu kısa giriş işlemi ayrı bağlantı/transaction kullanır; isteğin User/core
+  ORM session'ını flush/commit/rollback yapmaz. SQLite BEGIN IMMEDIATE ve
+  350ms busy timeout; PostgreSQL kilit satırı FOR UPDATE/lock timeout yolu vardır.
+  Meşgul DB 503/Retry-After:1, dolu bütçe 429/sınırlı Retry-After döndürür.
+  Şema eksikse sabit 503/yerel upgrade hatası; otomatik DDL yoktur.
+- En fazla 10000 aggregate slot + bir kilit satırı tutulur. Doluyken yeni key
+  failclosed reddedilir. Süresi geçmiş aggregate slot UPDATE ile başka key'e
+  çevrilebilir; kullanıcı/oturum/işlem geçmişine ve dosyalara dokunulmaz, DELETE
+  yoktur. Sabit pencere sınırında iki kısa aralığa yakın burst mümkündür;
+  dağıtık saldırı/ağ koruması ihtiyacı bu özellikten sonra da devam eder.
+- Yalnız init_auth'sız izole hook fixture'ları bellek sayacı kullanır. Ek MFA
+  komutlarının IP istek bütçesi hâlâ yerel bellektedir; hassas faktör denemeleri
+  ayrıca DB'de hesaba göre kalıcı kilitlenir.
+- Genel hatalarda tarayıcıya exception/traceback/anahtar veya DB sorgusu gitmez.
+  Hata yanıtı güvenlik başlıklarını korur. Yeni güvenlik logları yalnız sabit
+  olay, actor_id, endpoint ve istek kimliği tutar; parola/OTP/gövde yazmaz.
+- Ham process logları bütün işletmelerden olay içerebildiği için web'e verilmez:
+  /logs yeni şirket denetim ekranına yönlenir, /logs.json 410 döndürür. SQLAlchemy
+  hide_parameters ve çekirdek sabit hata logları parametre/traceback sızıntısını
+  azaltır; eski kaynak dosyaları korunur.
+- Hesap güvenliği arayüzü özgün kullanıcı/işletme kimliğini POST başlıklarıyla
+  sunucuya bağlar. Başka sekmede giriş değiştiğinde eski sekmenin komutu yeni
+  hesaba uygulanmaz; başlık çifti hatalıysa 400, kimlik değişmişse 409 döner.
+
+3. İSTEĞE BAĞLI SAHİP MFA'SI
+- Yeni özellik kendiliğinden açılmaz. Sahip /account-security ekranında mevcut
+  parolasını doğrular, Authenticator'a anahtarı elle ekler ve 6 haneli kodu
+  kanıtlar. Atölye/kasiyer hesabı bu sahip ayarını değiştiremez.
+- TOTP: cryptography paketinin RFC6238 uygulaması, SHA1, 6 hane, 30 saniye,
+  20 rastgele bayt sır, geçerli/adım önce/adım sonra penceresi. Aynı sayaç
+  ikinci kez kullanılamaz; koşullu SQL güncellemesi paralel isteklerde de
+  tüketimi tekilleştirir. RFC test vektörleri 2038 sonrası tarihi de içerir.
+- Sır veritabanında Fernet ile doğrulanmış biçimde şifrelenir. Şifreli içeriğe
+  kullanıcı+işletme bağlanır. Anahtar ayrı BRIVA_AUTH_ENCRYPTION_KEY ayarıdır.
+  manage.py configure-local-auth yerel anahtarı yalnız eksikse hazırlar;
+  terminalde anahtar göstermez. Normal girişte MFA kapalıysa anahtar gerekmez.
+- Kurulum bekleme kaydı yalnız başlatan oturuma bağlı ve 10 dakika geçerlidir.
+  Parola adımından sonra tam oturum verilmez; 5 dakikalık tek kullanımlık giriş
+  doğrulaması açılır. MFA başarılı olmadan çekirdek API'lerine erişilemez.
+- Sekiz kurtarma kodunun her biri 128 bit rastgeledir. DB'de yalnız kullanıcıya
+  bağlı özet bulunur. Kod tek kullanımlıktır; yenilenince önceki kodlar emekli
+  edilir, geçmiş satırlar silinmez. Kodlar yalnız üretildikleri yanıtta görünür;
+  status/list API'si tekrar göstermez. Arayüzde gizle düğmesi metni temizler.
+- Fernet anahtarı kaybolursa mevcut TOTP sırrı çözülemez. Kullanılmamış kurtarma
+  kodu ve parola ile giriş yapıp MFA kapatılabilir. Hem anahtar hem kurtarma
+  kodları hem telefon kaybolursa otomatik destek/sıfırlama yolu yoktur; kimlik
+  doğrulamalı yönetim kurtarma prosedürü canlıya çıkmadan tasarlanmalıdır.
+- Ortak parola giriş sınırına ek, hatalı yeniden doğrulama/ikinci faktör denemeleri DB'de
+  sayılır. Beş hatadan sonra beş dakika kilit uygulanır. Bu kilit hizmet
+  engelleme riskini tamamen çözmez; üretimde IP/hesap/ağ katmanı birlikte gerekir.
+- Anahtar rotasyonu ve yedekten dönüş ayrı operasyon gerektirir. Fernet
+  anahtarını silip yenisini koymak eski sırları açmaz. MultiFernet kontrollü
+  rotasyonu henüz yönetim komutu olarak uygulanmadı.
+- QR üretmek için dış hizmete sır gönderilmez; mevcut arayüz elle anahtar girişi
+  sunar. SMS veya e-posta hizmeti/bağımlılığı yoktur.
+
+4. ÇALIŞAN ERİŞİMİNİ KAPATMA
+- Kullanıcı silmek yerine AuthAccess ile erişim kapatılır. User kimliği,
+  parolası, rolü ve işlem geçmişi korunur. Etkin oturumlar ve bekleyen MFA
+  doğrulamaları iptal edilir. Sonraki giriş sunucuda reddedilir.
+- Yalnız aynı işletmedeki sahip nonowner çalışanın erişimini açabilir/kapatabilir.
+  Kendi veya başka sahip hesabını çalışan ekranından kapatamaz. Neden 3–240
+  karakterdir; kontrol karakteri ve sahte truthy enabled değeri reddedilir.
+- Erişimi yeniden açmak eski çerezleri canlandırmaz; tekrar giriş gerekir.
+  Admin/manager tablolarında Aktif/Erişim kapalı görünür. Yönetici sayfası
+  çalışanlar sekmesiyle açılır; eski satış/özetler açık biçimde arşiv olarak
+  işaretlenir. Yeni finans/işlem bağlantıları çalışma ekranına gider.
+- AuthAccess şu an son durum ve son değiştireni tutar. Ayrı, dışa aktarılan,
+  değiştirilemez uzun vadeli kimlik yönetimi denetim defteri değildir.
+
+5. TARAYICI TARAFINDA VERİ GÖSTERİMİ
+- Admin/manager, müşteri borçları, tanımlar ve tekil tanım sayfalarında
+  kullanıcıdan gelen değerler textContent veya bağlama uygun HTML escaping ile
+  gösterilir. İsimler JSON olarak onclick JavaScript'i içine gömülmez.
+- PDF/kimlik yol parçaları encodeURIComponent ile yazılır; yeni pencere
+  noopener/noreferrer kullanır. URL protokol/origin kontrolü ayrı yardımcıdır.
+- Eski AI yanıtı raw HTML/Markdown olarak çalıştırılmaz; düz metin gösterilir.
+- Ortak CSP eski inline kodları ve sınırlı CDN'leri halen destekler. Bu yüzden
+  'unsafe-inline' vardır; bu ayar XSS'nin engellendiği iddiasına dönüştürülemez.
+  Katı nonce/hash CSP ve tüm eski inline kodların taşınması ayrı iyileştirmedir.
+
+6. DOĞRULAMA KANITI
+- tests/test_security_hooks.py: 31 test. CSRF, rol/izin canlı okuma, şirket sınırı,
+  parola/oturum süreleri, özel görsel yolu, izin yükseltme, header ve throttle.
+- tests/test_auth_sessions_totp.py: 34 test. Gerçek cryptography, şifreli sır,
+  opt-in kurulum, oturum iptali, çerez/OTP/challenge replay, kurtarma kodları,
+  kilit, erişim kapat/aç ve tam altı tabloyla tekrar edilebilir additive şema.
+  İki test gerçek dosyalı SQLite bağlantılarında aynı OTP/kurtarma kodunu
+  paralel sunar: yalnız bir giriş başarılı olur. Kanıt DB'leri silinmez.
+- tests/security_dom_regression.cjs: 13 test. Gerçek eski renderer fonksiyonları
+  img/onerror, svg/onload, quote/attribute ve apostrof kodu yükleriyle çalışır.
+  Hesap güvenliği UI'sinde saklanan sır yoktur; başarılı kurtarma kodu üretiminden
+  sonraki durum sorgusu hata verse de yeni kodların ekranda korunduğu doğrulanır.
+- tests/test_security_actual_app.py: son kaynakla 14/14 gerçek app vakası onaylı
+  runner'da geçti. Çalışan erişimi, ortak DB giriş limiti, derin JSON 400 ve
+  512KB üstü gövdenin decoder öncesi 413 reddi alt kontrolleri de dahil.
+- Derin JSON testi, eski resource hook'unun bütün JSON'ları gereksiz erken
+  parse ettiğini buldu. Hook yalnız sahip olduğu eski endpoint body'lerini
+  parse edecek şekilde düzeltildi; yeni core/auth kendi boyut ve decoder
+  sınırında çalışır. Auth derin JSON 400 testi geçti, hiçbir sır kaydı açılmadı.
+- tests/test_auth_login_limits.py: 11/11 test geçti. Dokuz bağlantı/kapasite/HMAC/
+  şema/ORM testi normal ortamda geçti. Named pipe isteyen iki Windows process
+  testi dahil tüm dosya onaylı runner'da 11/11 geçti; OS ayarı değiştirilmedi.
+  Gerçek iki process aynı bütçeyi atomik tüketir; yeni process açmak limiti
+  sıfırlamaz. Sentetik DB ve test kanıtları yerelde korunur.
+  Parolalı giriş HTTP testi dolu bütçenin password checker'a ulaşmadığını;
+  MFA testi ise yalnız faktör commit sonrası çift reseti ve korunan IP toplamını
+  ayrıca doğrular. Tek bağlantılı bellek fixture'ında mevcut gerçek ORM write
+  transaction varsa store checkout öncesi 503 döndürür; başka işlem rollback olmaz.
+- Gerçek app testleri Windows FontTools ACL/Application Control nedeniyle
+  ana ajanın onaylı runner'ında koşulur. OS güvenlik ayarı düşürülmez. Birim/MFA
+  testleri PDF uygulama importuna ihtiyaç duymadan normal ortamda çalışır.
+- Fiziksel telefon, yazıcı, barkod okuyucu, gerçek atölye/raf ve PostgreSQL
+  çoklu worker davranışı bu güvenlik testleriyle doğrulanmış sayılmaz.
+
+7. BAĞIMLILIK KONTROLÜ VE TARİHLİ EK
+- Mevcut yerel ortamda pip check: No broken requirements found.
+- Yerel sürümler requirements-local.txt ile karşılaştırıldı: Flask3.1.3,
+  Flask-SQLAlchemy3.1.1, Flask-Migrate4.1.0, SQLAlchemy2.1.5, Werkzeug3.1.9,
+  alembic1.20.0, python-dotenv1.2.4, waitress3.0.2, fpdf2 2.8.9, xlrd2.0.1,
+  Pillow12.3.0, pandas3.0.1, openpyxl3.1.5, cryptography50.0.2.
+- FontTools saf Python yerel kopyası ana app testlerinde kullanılır. Sandbox
+  metadata/ACL erişimi her ortamda açık değildir; eksik/temiz gibi yorumlanmaz.
+- groq opsiyonel ve yerel ortamda kurulu değil; eski AI zaten kapalıdır.
+- pip-audit/safety veya güncel çevrimdışı CVE veri kaynağı mevcut değildi.
+  Bu ilk çevrimdışı kontrol CVE/advisory taraması değildi. Paketlerin pinli
+  olması veya pip check geçmesi güvenlik açığı bulunmadığını kanıtlamaz.
+  Aynı gün daha sonra yapılan çevrimiçi sorgunun ayrı kanıtı aşağıdadır.
+
+19 EKİM 2026 — 14:34:57 UTC (17:34:57 İSTANBUL) EKİ
+- audit_dependencies.py, resmî https://api.osv.dev/v1/querybatch uç noktasında
+  requirements.txt ve requirements-local.txt içindeki sabit sürümleri, ayrıca
+  çalışan Python ortamında bunların kurulu bağımlılık kapanışını sorguladı.
+- Sonuç COMPLETED: 32 farklı paket adına ait 33 paket/sürüm eşleşmesi;
+  bilinen advisory eşleşmesi 0, advisory kimlik listesi boş, eksik kurulu
+  dağıtım listesi boş. İki pandas sürümü ayrı paket/sürüm eşleşmesidir.
+- Kanıt: .verification-data/dependency-audit-bed3c09abe2443dcb246c90c5ad83026/result.json
+  Rapor zamanı ve kapsamı sabittir; yeni bir tarama yapıldığında yeni kanıt gerekir.
+- OSV'ye yalnız herkese açık paket adları, sürümleri ve PyPI ekosistem bilgisi
+  gönderildi. Özel uygulama verileri, stok/cari/müşteri bilgileri veya anahtarlar
+  gönderilmedi. Paket kurulumu/güncellemesi ve uygulama/DB mutasyonu yapılmadı.
+- Sıfır bilinen eşleşme güvenlik garantisi değildir; paketlerin açığı olmadığı
+  kanıtlanmış olmaz. Veritabanında henüz bilinmeyen açıklar, uygulama kodu,
+  eski CDN betikleri, pinlenmemiş AI paketleri ve optional extras bu sonuçla
+  doğrulanmaz. Sonuç yalnız sorgulanan paket/sürüm ve rapor anı içindir.
+- Hashli bağımlılık kilidi ve SBOM üretimi bu sorguyla tamamlanmış sayılmaz;
+  dağıtıma hazırlıkta ayrı yapılmalıdır.
+
+8. CANLIYA ÇIKMADAN KALAN TEKNİK KONULAR
+- HTTPS, Secure çerez, TRUSTED_HOSTS, kesin proxy IP listesi ve doğru tek hop
+  yönlendirme yapılandırması. Local HTTP'yi internete doğrudan açmayın.
+- PostgreSQL üzerinde ortak rate-limit kilidi, yarış/replay/işlem yalıtımı ve
+  hata halinde tekrar deneme doğrulaması; SQLite kanıtı eşdeğer değil. PostgreSQL
+  SQL yolu yazıldı fakat bu yerel ortamda gerçek sunucuda denenmedi.
+- DB ve ayrı şifreleme anahtarı yedekleme/geri yükleme denemesi; anahtar rotasyonu,
+  kurtarma prosedürü; sahip MFA'sını gerçek kişi kendi cihazında deneyerek açar.
+- Dağıtım öncesinde ve bağımlılıklar değişince yenilenen advisory sorgusu,
+  hashli kilit/SBOM, erişim loglarının merkezi korumalı kaydı,
+  alarm/izleme, hassas eski log ifadelerinin bütünüyle kimlik bazına indirgenmesi.
+- Süresi bitmiş/revoked auth kayıtlarının büyümesi için veri saklama politikası.
+  Şu an güvenlik veya geçmiş satırları otomatik silen bir görev yoktur.
+- Eski template/inline event temizliği ve nonce CSP; dosya upload decoder limitleri,
+  gerçek sunucu upload/bandwidth sınırları ve nesne depolama politikası.
+- Bağımsız erişim testi; gerçek personel rollerinin izinlerinin minimuma indirilmesi.
+
+9. ENTEGRASYON SÖZLEŞMESİ
+- init_auth(app, db, User), ardından çekirdek kaydı ve init_security(...).
+  Modül importu ve init_auth şema oluşturmaz. create_auth_schema() yalnız
+  AUTH_TABLE_NAMES içindeki altı tabloyu checkfirst ile oluşturup adlarını döndürür.
+- establish_session/issue/revoke/set_user_access servisleri commit YAPMAZ.
+  Başarılı login/logout/parola değişimi ve legacy erişim kapatma handler'ı kendi
+  açık commit sınırını yürütür. GET identity hook'u commit yapmaz.
+- MFA HTTP komutları kendi, yalnız auth verisi taşıyan transaction sınırıdır.
+  Hatalı deneme sayaçlarının kalması gereken retlerde sayaç commit edilir;
+  stok/cari servisinin ortasında gizli commit yapılmaz.
+
+RESMİ KAYNAKLAR
+RFC6238: https://www.rfc-editor.org/rfc/rfc6238
+cryptography TOTP: https://cryptography.io/en/stable/hazmat/primitives/twofactor/
+Fernet ve MultiFernet: https://cryptography.io/en/stable/fernet/

@@ -13,6 +13,38 @@ import enum
 import json
 import pandas as pd
 import re
+from copy import deepcopy
+from briva_numbers import legacy_cart, money as validated_money, quantity as validated_quantity
+
+
+def consume_legacy_shelf_stock(product, sold_sizes):
+    """Keep legacy shelf snapshots consistent in the same outer transaction.
+
+    Stock without any shelf allocation is unassigned legacy stock. Once shelf
+    allocations exist they must cover the sold variants; inconsistencies are
+    rejected rather than silently fabricating a shelf movement.
+    """
+    if not product.shelves:
+        return
+    shelves = deepcopy(product.shelves)
+    for sold in sold_sizes:
+        size = sold['value']
+        remaining = validated_quantity(sold['quantity'], 'Satılan adet')
+        for shelf in shelves:
+            amounts = shelf.get('sizes', {})
+            available = int(amounts.get(size, 0))
+            taken = min(remaining, max(available, 0))
+            if taken:
+                amounts[size] = available - taken
+                shelf['sizes'] = amounts
+                shelf['quantity'] = sum(max(int(v), 0) for v in amounts.values())
+                remaining -= taken
+            if remaining == 0:
+                break
+        if remaining:
+            raise ValueError(f'{size} için raf stoku eksik; önce stok/raf mutabakatı gerekli.')
+    product.shelves = shelves
+    flag_modified(product, 'shelves')
 
 
 # KULLANICI İŞLEMLERİ
@@ -308,7 +340,7 @@ def get_all_sales_for_report(company_id, search_term=None, start_date_str=None, 
     # Filtreleme için ilgili tablolara join yapıyoruz.
     if search_term:
         search_like = f"%{search_term}%"
-        query = query.join(User, User.id == Sale.user_id).join(Product, Product.code == Sale.product_code)
+        query = query.join(User, User.id == Sale.user_id).join(Product, (Product.code == Sale.product_code) & (Product.company_id == company_id))
         query = query.filter(
             or_(
                 Product.name.ilike(search_like),
@@ -757,9 +789,6 @@ def update_product(product_id, company_id, name=None, currency=None, description
         product = Product.query.filter_by(id=product_id, company_id=company_id).first()
         if not product: return False
 
-        # Eski kodu hafızaya alıyoruz (Değişip değişmediğini kontrol etmek için)
-        old_code = product.code
-
         if name: product.name = name
         if description is not None: product.description = description
         if image_path is not None: product.image_path = image_path if image_path != "" else None
@@ -788,60 +817,9 @@ def update_product(product_id, company_id, name=None, currency=None, description
             product.custom_attributes = custom_attributes
             flag_modified(product, "custom_attributes")
 
-        # =========================================================
-        # YENİ EKLENEN KISIM: BARKOD GÜNCELLEME MOTORU
-        # =========================================================
-        
-        # Aile bağı kopmasın diye mevcut base sayısını kullan, yoksa yeni üret
-        base_random = product.stock_id if product.stock_id else generate_unique_stock_id(company_id)
-
-        # Yeni özellikleri baz alarak barkodu tekrar hesaplat
-        new_group_code, new_final_code = generate_custom_codes(
-            company_id=company_id,
-            color_id=product.color_id,
-            custom_attributes=product.custom_attributes or {},
-            base_random_number=base_random,
-            category=product.category
-        )
-
-        # Eğer yeni üretilen kod eskisiyle aynı değilse (Nitelik değiştirilmişse)
-        if new_final_code != old_code:
-            
-            # 1. Çakışma kontrolü
-            original_code = new_final_code
-            counter = 1
-            while Product.query.filter(Product.code == new_final_code, Product.id != product.id, Product.company_id == company_id).first():
-                new_final_code = f"{original_code}{counter}"
-                counter += 1
-            
-            # 2. Ürünün yeni kodlarını ata
-            product.code = new_final_code
-            product.stock_id = new_group_code
-
-            # 3. Satış Geçmişi (Sales) Tablosunu Güncelle (Tarihçe kopmasın diye)
-            Sale.query.filter_by(product_id=product.id).update({"product_code": new_final_code})
-            
-            # 4. Sipariş (Orders) Tablosundaki JSON Sepetleri Güncelle
-            orders = Order.query.filter_by(company_id=company_id).all()
-            for order in orders:
-                order_updated = False
-                items = order.items
-                
-                if isinstance(items, str):
-                    import json
-                    try: items = json.loads(items)
-                    except: pass
-                
-                if isinstance(items, list):
-                    for item in items:
-                        if item.get('code') == old_code:
-                            item['code'] = new_final_code
-                            order_updated = True
-                            
-                if order_updated:
-                    order.items = items
-                    flag_modified(order, "items")
-        # =========================================================
+        # Printed identity and historical sale snapshots are immutable during
+        # ordinary editing. Descriptive fields must never reallocate a barcode
+        # or rewrite past sales/orders.
 
         db.session.commit()
         return True
@@ -1159,7 +1137,7 @@ def get_paginated_sales_groups(company_id, page=1, per_page=15, search_term=None
         # Tam eşleşme arıyoruz
         subquery = subquery.filter(Sale.customer_name == customer_name)
     if search_term:
-        subquery = subquery.join(Product, Product.code == Sale.product_code).filter(
+        subquery = subquery.join(Product, (Product.code == Sale.product_code) & (Product.company_id == company_id)).filter(
             (Sale.customer_name.ilike(f'%{search_term}%')) |
             (User.username.ilike(f'%{search_term}%')) |
             (Product.name.ilike(f'%{search_term}%'))
@@ -1173,7 +1151,7 @@ def get_paginated_sales_groups(company_id, page=1, per_page=15, search_term=None
     group_ids_on_page = [g.sale_group_id for g in paginated_groups.items]
 
     # 4. Sayfadaki grupların tüm detaylarını getir
-    sales_in_groups = Sale.query.filter(Sale.sale_group_id.in_(group_ids_on_page)).order_by(Sale.sale_date.desc()).all()
+    sales_in_groups = Sale.query.filter(Sale.company_id == company_id, Sale.sale_group_id.in_(group_ids_on_page)).order_by(Sale.sale_date.desc()).all()
     
     # 5. Sonuçları yapılandır
     results = []

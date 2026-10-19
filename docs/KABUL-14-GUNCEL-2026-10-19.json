@@ -1,0 +1,167 @@
+{
+  "generated_at_utc": "2026-10-19T14:33:01.905562+00:00",
+  "baseline_preserved": ".analysis-evidence/acceptance-14-2026-10-19.json",
+  "summary": {
+    "PASS_LOCAL_SOFTWARE": 13,
+    "NOT_TESTED_HARDWARE": 1
+  },
+  "test_report": ".verification-data/local-checks-d3a9aa949fb3420a89c7302a5678f82f/result.json",
+  "test_count": 280,
+  "barcode_digital_report": ".verification-data/label-independent-20261019/decode-2026-10-19T09-53-57-038Z/report.json",
+  "items": [
+    {
+      "id": 1,
+      "criterion": "Barkod on düzenlemede sabit kalır",
+      "status": "PASS_LOCAL_SOFTWARE",
+      "test_references": [
+        "tests/test_core_domain.py::test_barcodes_stay_same_after_ten_model_and_price_edits",
+        "tests/test_end_to_end_http.py::test_model_edits_preserve_printed_barcodes"
+      ],
+      "scope": "Isolated synthetic SQLite/HTTP/JavaScript; PostgreSQL not verified.",
+      "notes": ""
+    },
+    {
+      "id": 2,
+      "criterion": "4 beden x 3 renk için 12 tekli barkod",
+      "status": "PASS_LOCAL_SOFTWARE",
+      "test_references": [
+        "tests/test_core_domain.py::test_three_colors_four_sizes_create_twelve_distinct_unit_barcodes"
+      ],
+      "scope": "Isolated synthetic SQLite/HTTP/JavaScript; PostgreSQL not verified.",
+      "notes": ""
+    },
+    {
+      "id": 3,
+      "criterion": "Barkod tekli/seri ve bedeni belirler",
+      "status": "PASS_LOCAL_SOFTWARE",
+      "test_references": [
+        "tests/test_core_domain.py::test_barcode_resolves_kind_and_exact_components"
+      ],
+      "scope": "Isolated synthetic SQLite/HTTP/JavaScript; PostgreSQL not verified.",
+      "notes": ""
+    },
+    {
+      "id": 4,
+      "criterion": "Seri ve tekli aynı sepette tüm stokları doğru azaltır",
+      "status": "PASS_LOCAL_SOFTWARE",
+      "test_references": [
+        "tests/test_core_domain.py::test_series_and_extra_pieces_reduce_same_authoritative_stock",
+        "tests/test_core_multishelf.py::test_sale_consumes_actual_shelves_and_preserves_source_snapshot"
+      ],
+      "scope": "Isolated synthetic SQLite/HTTP/JavaScript; PostgreSQL not verified.",
+      "notes": ""
+    },
+    {
+      "id": 5,
+      "criterion": "Tekrar eklemede adet ve tutar doğru birleşir",
+      "status": "PASS_LOCAL_SOFTWARE",
+      "test_references": [
+        "tests/test_core_domain.py::test_repeated_unit_rows_reduce_all_pieces",
+        "tests/workbench_state.cjs"
+      ],
+      "scope": "Isolated synthetic SQLite/HTTP/JavaScript; PostgreSQL not verified.",
+      "notes": ""
+    },
+    {
+      "id": 6,
+      "criterion": "Döviz değişiminde tekli fiyat korunur",
+      "status": "PASS_LOCAL_SOFTWARE",
+      "test_references": [
+        "tests/test_core_domain.py::test_money_is_exact_and_currency_does_not_use_series_price",
+        "tests/currency_regression.cjs"
+      ],
+      "scope": "Isolated synthetic SQLite/HTTP/JavaScript; PostgreSQL not verified.",
+      "notes": ""
+    },
+    {
+      "id": 7,
+      "criterion": "Son kalem hatalıysa işlem tamamen geri alınır",
+      "status": "PASS_LOCAL_SOFTWARE",
+      "test_references": [
+        "tests/test_core_domain.py::test_last_line_failure_rolls_back_all_stock_and_documents",
+        "tests/test_core_domain.py::test_failure_after_stock_write_rolls_back_cash_and_receivable"
+      ],
+      "scope": "Isolated synthetic SQLite/HTTP/JavaScript; PostgreSQL not verified.",
+      "notes": ""
+    },
+    {
+      "id": 8,
+      "criterion": "Son ürünü iki kasa eşzamanlı satamaz",
+      "status": "PASS_LOCAL_SOFTWARE",
+      "test_references": [
+        "tests/test_core_concurrency.py::test_last_piece_sold_once_under_two_real_connections"
+      ],
+      "scope": "Isolated synthetic SQLite/HTTP/JavaScript; PostgreSQL not verified.",
+      "notes": "Two real SQLite connections; no PostgreSQL claim."
+    },
+    {
+      "id": 9,
+      "criterion": "Paket açma fiziksel parça miktarını korur",
+      "status": "PASS_LOCAL_SOFTWARE",
+      "test_references": [
+        "tests/test_core_domain.py::test_seal_and_open_package_preserve_piece_total",
+        "tests/test_core_domain.py::test_package_transfer_keeps_code_and_preserves_piece_counts"
+      ],
+      "scope": "Isolated synthetic SQLite/HTTP/JavaScript; PostgreSQL not verified.",
+      "notes": ""
+    },
+    {
+      "id": 10,
+      "criterion": "Reçete değişikliği bekleyen siparişi etkilemez",
+      "status": "PASS_LOCAL_SOFTWARE",
+      "test_references": [
+        "tests/test_core_multishelf.py::test_new_recipe_version_does_not_change_reserved_shelf_contents",
+        "tests/test_core_domain.py::test_recipe_versions_freeze_old_barcode_and_old_sale_snapshot"
+      ],
+      "scope": "Isolated synthetic SQLite/HTTP/JavaScript; PostgreSQL not verified.",
+      "notes": ""
+    },
+    {
+      "id": 11,
+      "criterion": "Yanlış beden veya eksik adetle toplama tamamlanamaz",
+      "status": "PASS_LOCAL_SOFTWARE",
+      "test_references": [
+        "tests/test_core_domain.py::test_incomplete_task_cannot_sell_complete_task_consumes_reserved_stock",
+        "tests/test_core_multishelf.py::test_scan_is_bound_to_actual_source_shelf_and_exact_remaining_quantity"
+      ],
+      "scope": "Isolated synthetic SQLite/HTTP/JavaScript; PostgreSQL not verified.",
+      "notes": ""
+    },
+    {
+      "id": 12,
+      "criterion": "Kısmi tahsilat sonrası iade/cari doğru kalır",
+      "status": "PASS_LOCAL_SOFTWARE",
+      "test_references": [
+        "tests/test_core_domain.py::test_full_return_after_partial_payment_preserves_customer_credit",
+        "tests/test_end_to_end_http.py::test_workshop_shelf_picking_sale_credit_return_and_refund"
+      ],
+      "scope": "Isolated synthetic SQLite/HTTP/JavaScript; PostgreSQL not verified.",
+      "notes": ""
+    },
+    {
+      "id": 13,
+      "criterion": "Aynı isteğin tekrarı ikinci satış oluşturmaz",
+      "status": "PASS_LOCAL_SOFTWARE",
+      "test_references": [
+        "tests/test_core_concurrency.py::test_simultaneous_same_key_replays_one_sale",
+        "tests/test_core_domain.py::test_idempotent_retry_exactly_once_and_conflicting_content_rejected"
+      ],
+      "scope": "Isolated synthetic SQLite/HTTP/JavaScript; PostgreSQL not verified.",
+      "notes": ""
+    },
+    {
+      "id": 14,
+      "criterion": "Basılı etiket gerçek okuyucuda doğru okunur",
+      "status": "NOT_TESTED_HARDWARE",
+      "test_references": [],
+      "scope": "No physical printer, paper, scanner or adhesive pilot.",
+      "notes": "Independent digital decoding supports software rendering only."
+    }
+  ],
+  "limitations": [
+    "No production data migration or deployment.",
+    "No physical printer/scanner verification.",
+    "No actual PostgreSQL concurrency verification.",
+    "Passing tests do not prove absence of all defects."
+  ]
+}

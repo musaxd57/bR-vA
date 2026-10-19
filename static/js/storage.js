@@ -2936,9 +2936,15 @@ window.viewOrderDetails = function(orderId) {
       let priceUpdateFailed = false;
       shoppingCart.forEach(item => {
         const productDetails = productList[item.code];
-        if (productDetails && productDetails.currency && productDetails.currency[newCurrency]) {
-          const newPrice = productDetails.currency[newCurrency];
-          item.price = newPrice;
+        if (productDetails && productDetails.currency && Number.isFinite(Number(productDetails.currency[newCurrency])) && productDetails.currency[newCurrency] != null) {
+          const newPrice = Number(productDetails.currency[newCurrency]);
+          if (item.is_single) {
+            const seriesPieces = (productDetails.sizes || []).reduce((sum, size) => sum + Number(size.number || 0), 0);
+            const batchPieces = Object.values(item.single_sizes || {}).reduce((sum, count) => sum + Number(count), 0);
+            item.price = seriesPieces > 0 ? Number((newPrice * batchPieces / seriesPieces).toFixed(2)) : 0;
+          } else {
+            item.price = newPrice;
+          }
           item.currency = newCurrency;
         } else {
           priceUpdateFailed = true;
@@ -3024,7 +3030,7 @@ window.viewOrderDetails = function(orderId) {
                         stockInfoParts.push(`${sizeName}: ${realStock}`);
 
                         // KONTROL 1: İstenen > Gerçek Stok mu?
-                        if (qtyWanted > realStock) {
+                        if (qtyWanted * item.quantity > realStock) {
                             isInsufficient = true;
                         }
                         
@@ -3376,7 +3382,7 @@ window.viewOrderDetails = function(orderId) {
     if (item) {
         // 1. O satırın altındaki küçük toplam yazısını güncelle
         const rowTotal = (item.price * item.quantity).toFixed(2);
-        const rowTotalSpan = target.closest('.cart-item').querySelector('.cart-row-total-text');
+        const rowTotalSpan = target.closest('tr')?.querySelector('.cart-row-total-text');
         if (rowTotalSpan) {
             rowTotalSpan.textContent = `Top: ${rowTotal} ${item.currency}`;
         }

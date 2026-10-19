@@ -116,3 +116,23 @@ test('repeated currency changes keep existing and newly added series consistent'
     assert.equal(context.shoppingCart[0].quantity, expectedQuantity);
   }
 });
+
+test('single batch currency change preserves piece basis and batch multiplier', () => {
+  const { context, buttons } = createHarness();
+  context.productList.DEMO.sizes = [{ value: 'S', number: 1 }, { value: 'M', number: 2 }, { value: 'L', number: 1 }];
+  context.productList.DEMO.currency.USD = 40;
+  context.shoppingCart.push({code: 'DEMO', is_single: true, single_sizes: {M: 2}, price: 500, quantity: 3, currency: 'TL'});
+  buttons.find(button => button.dataset.currency === 'USD').click();
+  assert.equal(context.shoppingCart[0].price, 20);
+  assert.equal(context.shoppingCart[0].quantity, 3);
+  assert.equal(context.shoppingCart[0].price * context.shoppingCart[0].quantity, 60);
+});
+
+test('zero currency price remains a defined value', () => {
+  const { context, buttons } = createHarness();
+  context.productList.DEMO.currency.USD = 0;
+  context.shoppingCart.push({code: 'DEMO', is_single: false, price: 1000, quantity: 1, currency: 'TL'});
+  buttons.find(button => button.dataset.currency === 'USD').click();
+  assert.equal(context.shoppingCart[0].price, 0);
+  assert.equal(context.shoppingCart[0].currency, 'USD');
+});

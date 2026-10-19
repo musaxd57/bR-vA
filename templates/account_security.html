@@ -1,0 +1,86 @@
+<!doctype html>
+<html lang="tr">
+<head>
+  <meta charset="utf-8">
+  <meta name="viewport" content="width=device-width,initial-scale=1">
+  <title>Hesap güvenliği · BRIVA</title>
+  {% include '_security_head.html' %}
+  <link rel="stylesheet" href="{{ url_for('static', filename='account_security.css') }}">
+  <script src="{{ url_for('static', filename='js/account_security.js') }}" defer></script>
+</head>
+<body class="as" data-security-mode="{{ security_mode }}">
+  <a class="as-skip" href="#as-main">İçeriğe geç</a>
+  <header class="as-header">
+    <a class="as-brand" href="{{ url_for('workbench') if security_mode != 'challenge' else url_for('login') }}"><span>B</span> BRIVA</a>
+    {% if security_mode != 'challenge' %}<a href="{{ url_for('workbench') }}">← Çalışma ekranına dön</a>{% endif %}
+  </header>
+  <main id="as-main" class="as-main" tabindex="-1">
+    <p class="as-eyebrow">HESABIN SİZİN KONTROLÜNÜZDE</p>
+    {% if security_mode == 'challenge' %}
+      <section class="as-card as-challenge">
+        <span class="as-lock" aria-hidden="true">⌑</span>
+        <h1>Girişinizi doğrulayın.</h1>
+        <p>Doğrulayıcı uygulamanızdaki 6 haneli kodu girin. Telefonunuza ulaşamıyorsanız tek kullanımlık kurtarma kodlarından birini kullanabilirsiniz.</p>
+        <div id="as-message" class="as-message" role="status" aria-live="polite" hidden></div>
+        <form id="as-challenge-form">
+          <label>Doğrulama veya kurtarma kodu<input name="code" required maxlength="80" autocomplete="one-time-code" spellcheck="false" autofocus></label>
+          <button class="as-btn as-primary" type="submit">Girişi tamamla</button>
+        </form>
+        <button id="as-cancel-challenge" class="as-btn as-quiet" type="button">Giriş ekranına dön</button>
+        <small>Bu doğrulama 5 dakika geçerlidir. Aynı doğrulama kodu ikinci kez kullanılamaz.</small>
+      </section>
+    {% else %}
+      <div class="as-title"><div><h1>Hesap güvenliği.</h1><p>İki aşamalı doğrulamayı ve bu hesaba bağlı oturumları yönetin.</p><p id="as-account-name"></p></div><span id="as-mfa-badge" class="as-badge">Yükleniyor…</span></div>
+      <div id="as-message" class="as-message" role="status" aria-live="polite" hidden></div>
+      <div class="as-grid">
+        <section class="as-card">
+          <h2>İki aşamalı doğrulama</h2>
+          <p id="as-mfa-description">Güvenlik durumu alınıyor…</p>
+          <p id="as-mfa-unavailable" class="as-note" hidden>Yerel güvenlik anahtarı henüz hazırlanmadı. Bu ayar hazırlandığında telefonunuzdaki doğrulayıcı uygulamayla kurulumu başlatabilirsiniz.</p>
+          <p id="as-owner-only" class="as-note" hidden>İki aşamalı doğrulama ayarını işletme sahibi yönetir. Aşağıdan kendi açık oturumlarınızı kapatabilirsiniz.</p>
+          <form id="as-setup-form" hidden>
+            <label>Mevcut şifreniz<input name="current_password" type="password" required maxlength="256" autocomplete="current-password"></label>
+            <button class="as-btn as-primary" type="submit">Kurulumu başlat</button>
+          </form>
+          <div id="as-setup-details" hidden>
+            <ol class="as-steps"><li>Telefonunuzdaki doğrulayıcı uygulamada yeni bir hesap ekleyin.</li><li>Elle anahtar girme seçeneğiyle <strong>BRIVA</strong> hesabını oluşturun. Zaman tabanlı, 6 haneli kodu seçin.</li><li>Aşağıdaki anahtarı girin ve uygulamadaki kodla kurulumu tamamlayın.</li></ol>
+            <label>Kurulum anahtarı<output id="as-secret" class="as-secret"></output></label>
+            <button id="as-copy-secret" class="as-btn" type="button">Anahtarı kopyala</button>
+            <small>Anahtar yalnız bu kurulumda gösterilir. Kimseyle paylaşmayın; dışarıdaki bir QR hizmetine gönderilmez.</small>
+            <form id="as-confirm-form">
+              <label>Mevcut şifreniz<input name="current_password" type="password" required maxlength="256" autocomplete="current-password"></label>
+              <label>Uygulamadaki 6 haneli kod<input name="code" required inputmode="numeric" pattern="[0-9]{6}" maxlength="6" autocomplete="one-time-code"></label>
+              <button class="as-btn as-primary" type="submit">Kodu doğrula ve aç</button>
+            </form>
+          </div>
+          <form id="as-factor-actions" hidden>
+            <p>Kurtarma kodlarını yenilemek veya doğrulamayı kapatmak için şifrenizi ve yeni bir doğrulama kodunu girin.</p>
+            <label>Mevcut şifreniz<input name="current_password" type="password" required maxlength="256" autocomplete="current-password"></label>
+            <label>Doğrulama veya kurtarma kodu<input name="code" required maxlength="80" autocomplete="one-time-code" spellcheck="false"></label>
+            <div class="as-actions"><button class="as-btn" name="action" value="rotate" type="submit">Kurtarma kodlarını yenile</button><button class="as-btn as-danger" name="action" value="disable" type="submit">İki aşamalı doğrulamayı kapat</button></div>
+          </form>
+        </section>
+        <section class="as-card as-summary">
+          <h2>Doğrulama nasıl çalışır?</h2>
+          <p>Şifrenizden sonra telefonunuzdaki doğrulayıcı uygulamanın kodu istenir. Telefon interneti veya SMS gerekmez.</p>
+          <ul><li>Kurulum siz onaylamadan açılmaz.</li><li>Kurulum tamamlandığında diğer oturumlar kapanır.</li><li>Kurtarma kodları tek kullanımlıktır.</li><li>Şifre değişikliği diğer açık oturumları geçersiz kılar.</li></ul>
+          <p id="as-recovery-count" class="as-note" hidden></p>
+          <a href="{{ url_for('profile') }}">Şifremi ve profilimi düzenle →</a>
+        </section>
+      </div>
+      <section id="as-recovery-section" class="as-card as-recovery" hidden>
+        <h2>Kurtarma kodlarınızı saklayın.</h2><p>Bu kodlar yalnız şimdi gösterilir. Telefonunuza ulaşamadığınızda her kodla bir kez giriş yapabilirsiniz. Eski kodlar yenileme sonrasında çalışmaz.</p>
+        <pre id="as-recovery-codes" tabindex="0"></pre>
+        <div class="as-actions"><button id="as-copy-recovery" class="as-btn" type="button">Kodları kopyala</button><button id="as-hide-recovery" class="as-btn as-primary" type="button">Sakladım, kodları gizle</button></div>
+      </section>
+      <section class="as-card">
+        <div class="as-section-title"><div><h2>Açık oturumlar</h2><p>Her kayıt bu hesaba bağlı bir tarayıcı oturumudur. Kapatılan oturumun eski çerezi yeniden kullanılamaz.</p></div></div>
+        <label class="as-session-password">Oturum kapatma için mevcut şifreniz<input id="as-sessions-password" type="password" required maxlength="256" autocomplete="current-password"></label>
+        <div id="as-sessions" class="as-sessions" aria-live="polite"></div>
+        <button id="as-revoke-others" class="as-btn" type="button">Diğer bütün oturumları kapat</button>
+      </section>
+    {% endif %}
+    <footer>BRIVA · Hesap güvenliği</footer>
+  </main>
+</body>
+</html>

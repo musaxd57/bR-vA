@@ -1,117 +1,98 @@
-# Briva Envanter — GitHub için hazırlanmış geliştirme kopyası
+# BRIVA — yerel mağaza ve depo uygulaması
 
-Bu paket, sağlanan `envaner.rar` içindeki Flask uygulamasından hazırlanmıştır. Mevcut HTML şablonları, CSS, JavaScript, Python kaynakları ve migrasyon dosyaları korunmuştur. İlk kurulum ve doğrulanmış birkaç hata düzeltilmiştir.
+Flask/Python uygulaması; model, renk, beden ve konum bazında ortak stok ve cari defteri kullanır. Yeni katalog **sıfır stokla** başlar. Excel içe aktarımı başlangıç iş akışının parçası değildir.
 
-**Durum:** Yerel geliştirme başlangıcıdır. Canlı mağazaların stok ve cari kayıtlarını devralacak tamamlanmış sürüm değildir. GitHub'a yüklemek, uygulamayı internette çalıştırmaz; barındırma ve gerçek veri geçişi ayrı adımlardır.
+## Bu bilgisayarda açma
 
-## 1. GitHub'a yükleme
+`start-local.cmd` dosyasını çalıştırın. Çalışan ortam `.venv-local`, adres `http://127.0.0.1:5000/workbench` olur. Zaten çalışan 5000 sunucusunun yanına ikinci sunucu açmayın.
 
-ZIP'i bilgisayarınızda açın. İçindeki `briva-envanter` klasöründe `app.py`, `requirements.txt`, `README.md`, `templates` ve `static` görünmelidir. Git deposunun kökünde de bu dosyalar bulunmalıdır.
-
-### Tarayıcıdan, iki küçük yüklemeyle
-
-GitHub'ın tarayıcı yüklemesi dosya başına 25 MiB ve tek işlemde en fazla 100 dosya kabul eder. Bu paketteki tüm dosyalar boyut sınırının çok altındadır; toplam dosya sayısı nedeniyle iki işlem kullanın.
-
-1. Boş bir **private** GitHub deposunu açın. Henüz yoksa `briva-envanter` adıyla oluşturabilirsiniz. Mevcut projenizde başka kodlar varsa önce ayrı bir dal veya yeni depo kullanın.
-2. **Add file → Upload files** bölümünü açın. Boş depoda bunun yerine **uploading an existing file** bağlantısı görünebilir.
-3. Bilgisayardaki `briva-envanter` klasörünün içine girin. **`migrations` klasörü hariç** dosya ve klasörleri seçip yükleme alanına sürükleyin. ZIP dosyasını veya dıştaki `briva-envanter` klasörünü seçmeyin.
-4. Açıklamaya `Briva kaynak kodu ve yerel kurulum` yazıp değişikliği kaydedin.
-5. Tekrar **Add file → Upload files** açın. Bu kez yalnız `migrations` klasörünü sürükleyip kaydedin. Klasörün içindekileri ayrı ayrı köke taşımayın.
-6. Depoda `app.py`, `requirements.txt`, `README.md`, `static/`, `templates/`, `migrations/` göründüğünü kontrol edin. `.gitignore` ve `.env.example` da paketin parçasıdır.
-
-Kurulumdan sonra oluşacak gerçek `.env`, `instance/data.db`, günlük ve ürün yüklemeleri kaynak pakete dahil değildir. Tarayıcıdan manuel yüklerken bilgisayardaki bu yeni çalışma dosyalarını ayrıca seçmeyin; `.gitignore` yerel Git iş akışını korur.
-
-### Düzenli geliştirme için GitHub Desktop
-
-1. [GitHub Desktop](https://desktop.github.com/download/) kurup hesabınıza giriş yapın.
-2. GitHub'da deponuz zaten varsa **File → Clone repository** ile onu bilgisayara alın. Yeni başlayacaksanız **File → New repository** ile `briva-envanter` adlı yerel depo oluşturun.
-3. ZIP'ten çıkan klasörün **içeriğini**, Desktop'ın oluşturduğu depo klasörüne kopyalayın. `app.py` doğrudan deponun kökünde olmalı; iç içe ikinci bir proje klasörü oluşmamalı.
-4. Desktop'taki değişiklikleri inceleyip `Briva kaynak kodu ve yerel kurulum` mesajıyla **Commit to …** seçin.
-5. Yeni depoda **Publish repository** seçip **Keep this code private** kutusunu işaretli bırakın. Önceden klonlanmış depoda **Push origin** kullanın.
-
-Paketin eski Git geçmişi dahil edilmedi. Daha önce başka bir depoya eklediğiniz büyük dosya veya anahtar varsa, bu yeni paket o deponun geçmişini kendiliğinden temizlemez.
-
-Resmî kaynaklar: [Dosya sınırları](https://docs.github.com/en/repositories/working-with-files/managing-large-files/about-large-files-on-github), [tarayıcıdan dosya ekleme](https://docs.github.com/en/repositories/working-with-files/managing-files/adding-a-file-to-a-repository), [GitHub Desktop ile başlangıç](https://docs.github.com/en/desktop/overview/creating-your-first-repository-using-github-desktop).
-
-## 2. Bilgisayarda ilk çalıştırma
-
-Python 3.11 veya 3.12 kullanın. Komutları `app.py` dosyasının bulunduğu klasörde çalıştırın. Bağımlılık kurulumu internet bağlantısı gerektirir. Node.js yalnız JavaScript testini çalıştırmak için gerekir; uygulamanın normal çalışması Python üzerindedir.
-
-### Windows PowerShell
+PowerShell alternatifi:
 
 ```powershell
-py -3.11 -m venv .venv
-.\.venv\Scripts\python.exe -m pip install -r requirements.txt
-.\.venv\Scripts\python.exe manage.py init
-.\.venv\Scripts\python.exe manage.py create-admin --username isa --company briva
-.\.venv\Scripts\python.exe app.py
+.\.venv-local\Scripts\python.exe manage.py upgrade-local
+.\.venv-local\Scripts\python.exe app.py
 ```
 
-Python 3.12 kuruluysa ilk komutta `-3.11` yerine `-3.12` kullanın. Sanal ortamı etkinleştirme veya PowerShell güvenlik ayarını değiştirme gerekmez.
+`upgrade-local` yalnız eksik yeni tabloları oluşturur; eski satırları taşımaya, silmeye veya stokları yeniden hesaplayıp yazmaya çalışmaz. Gerçek ve sentetik test veritabanları ayrıdır. Bu makinenin çalışma ortamı ayrıntıları `YEREL-KURULUM.txt` içindedir.
 
-### macOS / Linux
+## Baştan yeni kurulum
 
-```bash
-python3 -m venv .venv
-.venv/bin/python -m pip install -r requirements.txt
-.venv/bin/python manage.py init
-.venv/bin/python manage.py create-admin --username isa --company briva
-.venv/bin/python app.py
+Python 3.11–3.12 ile ayrı sanal ortam hazırlayın, `requirements.txt` kurun, sonra:
+
+```text
+python manage.py init
+python manage.py create-admin --username KULLANICI --company MARKA
+python manage.py configure-local-auth
+python app.py
 ```
 
-`create-admin` parolayı terminalde iki kez sorar. Yazarken karakterlerin görünmemesi normaldir. En az 10 karakter kullanın. `isa` ve `briva` örnek kurulum alanlarıdır; kullanıcı adı ve şirket kodunu ihtiyacınıza göre değiştirebilirsiniz. Merter ve Galata'yı bu aşamada farklı şirketler olarak açmak zorunda değilsiniz; şirket/lokasyon modeli ayrıca ele alınacaktır.
+`init` mevcut veritabanının üzerine yazmayı reddeder. Yönetici parolası terminalde iki kez sorulur; 12–256 karakter olmalıdır. `.env.example` yalnız boş örnek ayarlardır; gerçek anahtar içermez. MFA anahtarı hazırlamak iki aşamalı doğrulamayı açmaz. İşletme sahibi `/account-security` ekranından doğrulayıcı uygulamasını kendisi kurar.
 
-Tarayıcıda **http://127.0.0.1:5000/login** adresini açıp oluşturduğunuz kullanıcıyla giriş yapın. Bu başlatma komutu yalnız kendi bilgisayarınızdaki erişime açıktır ve debug kapalıdır.
+## Günlük iş akışı
 
-### İlk kurulumun yaptığı işlemler
+1. Aynı şirket altında Merter/Galata mağaza, depo ve alt raflarını tanımlayın.
+2. Modelin renklerini ve bedenlerini topluca oluşturun. Her varyantın barkodu oluşur; stok hâlâ sıfırdır.
+3. Örneğin S:1 / M:2 / L:2 / XL:1 seri reçetesini tanımlayın. Reçetenin bileşimi sonradan değişmez; yeni dağılım yeni sürümdür.
+4. Her kıyafete kendi renk/beden etiketi yapıştırın. Tek gömleğin poşeti seri paketi sayılmaz. Çok parçalı fiziksel paket ayrı tanımlanır.
+5. Atölye planı ve etiket basımı stok oluşturmaz. Mal kabulde gerçekten gelen beden miktarlarını girin; tam seriyi çarpanla, teklemeleri beden tablosuyla birlikte kaydedin.
+6. Birim barkodu bir parçayı, seri barkodu reçete bileşenlerini, fiziksel paket barkodu kendi içeriğini temsil eder. Satış bunları aynı beden/konum stoklarından düşer.
+7. Müşterinin özel beden karışımı tekli satırlar olarak eklenebilir. Fiyatlar parça başınadır; işletme sahibi gerekçeyle fiyat değiştirir, satıştaki fiyat korunur.
+8. Çok raflı görev stokları gerçek raflarda rezerve eder. Önce rafı, sonra doğru ürünü gerçek adet kadar okutun. Eksik toplama tamamlanmadan satışa izin verilmez.
+9. İade özgün satışa bağlıdır; stok ve cari aynı işlemde güncellenir. Farklı dövizlerin bakiyeleri birbirine eklenmez.
 
-- `manage.py init`, yoksa rastgele oturum anahtarlı bir `.env` oluşturur. Anahtar kaynak kodda veya örnek ayar dosyasında bulunmaz.
-- Model tanımlarından yeni ve boş bir `instance/data.db` oluşturur; demo hesap, ürün veya müşteri eklemez.
-- Aynı dizinde veritabanı zaten varsa işlemi durdurur ve onu değiştirmez.
-- Uygulamayı import etmek artık kendiliğinden tablo oluşturmaz.
-- `BRIVA_DATA_DIR` ortam değişkeniyle başka bir veri dizini kullanılabilir. Varsayılan `instance/` dizinidir.
+Stok ekranı tam seri kapasitesi ve seri dışında kalan beden adetlerini gösterir. Alt raflar seçilirse bu kapasite raflardan toplanabilir miktardır. Paketli ve rezerve miktarlar ayrıca izlenir. Karantinadaki kusurlu ürün satışa açılamaz.
 
-`.env.example` bir açıklama dosyasıdır. Normal ilk kurulumda bunu elle `.env` olarak kopyalamak gerekmez. Elle kopyalarsanız boş `SECRET_KEY` alanını rastgele, en az 32 karakterlik bir değerle doldurmalısınız.
+## Fotoğraf, etiket ve işlem belgesi
 
-## 3. Paket içinde ne var?
+`/product-photos` model fotoğraflarını şirket oturumuyla açar. Fotoğraflar sınırlandırılmış JPEG biçimine dönüştürülür, kamera/konum metaverisi çıkarılır ve geçmiş fotoğraflar korunur. Görselden otomatik stok yazan AI bağlı değildir.
 
-| Bölüm | İçerik |
-|---|---|
-| `app.py`, `db_utils.py`, `models.py`, `extensions.py` | Mevcut Flask uygulaması ve veri modeli |
-| `templates/`, `static/` | Mevcut ekranlar, 14 CSS dosyası ve 14 JavaScript dosyası |
-| `fonts/` | PDF'lerde kullanılan iki font ve arşivden çıkarılmış DejaVu lisansı |
-| `migrations/` | Eski migrasyon geçmişi; otomatik uygulanmaz |
-| `manage.py` | Boş yerel veritabanı ve ilk yönetici kurulumu |
-| `requirements.txt`, `requirements-ai.txt` | Temel ve opsiyonel AI bağımlılıkları |
-| `.env.example`, `.gitignore` | Örnek ayarlar ve yerel dosyaları Git dışında tutma kuralları |
-| `tests/` | Para birimi ve yerel uygulama regresyonları |
-| `DURUM.md` | Yapılan değişiklikler, doğrulama kapsamı ve kalan işler |
+Etiketler Code 128 olarak çizilir; barkodda kimlik bulunur, değişebilir stok/fiyat/raf bulunmaz. Markaya özel kural yalnız yeni kodları etkiler. Baskı öncesinde 203/300 DPI ve etiket ölçüsü kontrol edilir; dar çizgi 2 pikselden küçükse baskı engellenir. İşletme içi 13 haneli kod GS1 tahsisi anlamına gelmez. Gerçek yazıcı/okuyucu pilotu hâlâ gereklidir.
 
-Orijinal veritabanı, ürün fotoğraf yüklemeleri, Excel dosyaları, `.env`, loglar, font ZIP'i ve eski `.git` klasörü pakete konmadı. Bunlar orijinal arşivde kalır. **Yeni kurulumu açınca eski stokların ve ürün fotoğraflarının görünmemesi bu nedenle beklenir.** Mevcut arşivi veri geçişi için saklayın.
+Satış sonucundaki işlem belgesi A4 veya 80 mm olarak açılabilir. Eski satış fiyatlarını ve ilk tahsilatı korur; sonraki genel cari tahsilatını satışa paylaştırılmış gibi göstermez. Bu çıktı e-fatura entegrasyonu değildir.
 
-Bazı görsel kaynaklar ve tarayıcı kütüphaneleri orijinaldeki gibi CDN'den gelir; arayüzün tamamı için internet bağlantısı gerekir.
+## Güvenlik ve eski kayıtlar
 
-## 4. Doğrulama
+Sunucu kimlik, şirket, işlem yetkisi ve CSRF denetimi yapar. Tekrar gönderimde aynı işlem anahtarı ikinci stok/cari hareketini oluşturmaz. Eski stok/cari yazma yolları normal çalışmada kapalıdır; ortam değişkeniyle açılamaz. Uyumluluk yalnız izole `TESTING` ortamındadır. Eski AI ve Excel yazma yolları koşulsuz kapalıdır.
 
-Bağımlılıkları kurduktan sonra:
+`/storage` eski ürünlerin salt okunur arşividir; miktarları yeni stok toplamına eklenmez. İşlem denetim defteri şirketle sınırlıdır; ortak ham sunucu günlükleri webden servis edilmez. Oturumlar sunucu tarafında iptal edilebilir; çalışan erişimi kapatılırken hesap ve işlem geçmişi korunur. Giriş deneme bütçeleri DB üzerinde süreçler ve yeniden başlatmalar arasında korunur.
 
-```bash
-python tests/test_local_setup.py
-node tests/currency_regression.cjs
+Güvenlik ayrıntıları ve kalan sınırlar `docs/GUVENLIK-DURUMU-2026-10-19.txt` içindedir.
+
+## Yedek ve geri açma denemesi
+
+```text
+python manage.py backup-local
+python manage.py verify-backup --path YEDEK_DOSYASI
+python manage.py restore-check --path YEDEK_DOSYASI
 ```
 
-Windows'ta ilk komut için `.\.venv\Scripts\python.exe`, macOS/Linux'ta `.venv/bin/python` kullanabilirsiniz. İki dosyada toplam sekiz regresyon testi vardır. Python testleri geçici sentetik veritabanı kullanır ve dış ağ erişimini engeller; mevcut işletme verisini açmaz. JavaScript testleri gerçek handler fonksiyonlarını sahte DOM ile çalıştırır; tarayıcı görünüm testi değildir.
+Yeni dosya oluşturulur; mevcut yedek veya asıl DB üzerine yazılmaz. Bütünlük, yabancı anahtar ve stok defteri denetlenir. Geri açma yeni test klasöründe yapılır. `.env` oturum/MFA anahtarlarını yedekten ayrı ve güvenli koruyun.
 
-## 5. Eski veri ve migrasyonlar
+## Doğrulama
 
-Mevcut migrasyon geçmişinde üç uç bulunuyor: `209d329dc4c8`, `677eeb1cf3ad`, `91d9647e4196`. Bu nedenle `manage.py init` eski migrasyonları çalıştırarak kurulum yapmaz; güncel modellerden boş geliştirme veritabanı üretir. `alembic_version` geçmişi de otomatik damgalanmaz.
+```powershell
+.\.venv-local\Scripts\python.exe tests/run_local_checks.py
+```
 
-`python update.py` yalnız migrasyon durumunu gösterir. Eski dosyadaki otomatik `stamp head → migrate → upgrade` zinciri kaldırıldı. Gerçek veriyi taşımadan önce geçmişin nasıl birleştirileceği belirlenmeli, dönüşüm bir yedek üzerinde denenmeli ve stok/cari toplamları karşılaştırılmalıdır. Orijinal veritabanını yeni boş dosyanın üzerine kopyalamak bu çalışmanın yerine geçmez.
+Koşucu Python testlerini ayrı süreçlerde, Node testlerini ayrıca çalıştırır; kanıtlar silinmeden `.verification-data/local-checks-*/result.json` altında kalır. İşletme DB'sine test ürünü eklenmez. Ayrıca bağımsız ZXing barkod çözümlemesi ve tarayıcıyla sentetik satış/mal kabul/toplama denemeleri vardır. Fiziksel yazıcı/okuyucu, gerçek PostgreSQL eşzamanlılığı ve canlı barındırma doğrulanmış değildir.
 
-## 6. AI modülü
+## Migrasyon ve dağıtım
 
-Normal yerel kurulum `GROQ_API_KEY` gerektirmez. Anahtar boşken uygulama açılır ve AI servisi devre dışıdır. Eski AI kaynakları korunmuştur; dış API çağrıları bu paketin doğrulamasına dahil değildir. Etkinleştirme öncesinde `requirements-ai.txt` bağımlılığı ayrıca kurulmalı, sürümü sabitlenmeli ve stok/satış araçlarının kullanıcı yetkileri tamamlanmalıdır.
+Eski Alembic ağacının kaynakta tek ucu `91d9647e4196` olarak görülür. Bu, eski migrasyonların yeni boş DB'ye veya mevcut işletme DB'sine güvenle uygulanabildiğini kanıtlamaz. `update.py` yalnız durumu okur. Yeni yerel kurulum `init`, eksik yeni tablolar `upgrade-local` ile hazırlanır; eski kayıt dönüşümü yapılmaz.
 
-## 7. Bir sonraki geliştirme sırası
+GitHub'a push ve Railway/Vercel/Supabase dağıtımı bu yerel oturumda yapılmadı. Mimari ve kodun kaynağı depoda tutulur; prod veritabanı, HTTPS/proxy, yedekleme, göç ve donanım pilotu dağıtımdan önce ayrıca doğrulanmalıdır. Başlangıç raporu `DURUM.md` tarihsel belgedir; güncel kanıtlar `docs/` ve `.verification-data/` içindedir.
 
-Öncelik, ürün → stok → sipariş → satış → iade akışının tutarlılığıdır. Bunun üzerinde çoklu lokasyon, barkod, müşteri/cari ve yönetim raporları geliştirilebilir. Gerçek satış verisi güvenilir hâle geldikten sonra ajans ölçümü ve müşteri kazanım kanalları bağlanmalıdır. Detaylı kalan teknik işler `DURUM.md` içindedir.
+
+## Hesap bağlamadan GitHub teslim paketi
+
+```text
+python export_github.py
+```
+
+Komut GitHub'a bağlanmaz, commit veya push yapmaz. Geliştirilmiş kaynakları ve yeni dosyaları `.local-exports/` altında yeni bir ZIP'e alır; her dosyayı SHA256 ve ZIP içeriğiyle doğrular. Gerçek `.env`, veritabanı, ürün yüklemeleri, test verisi, yedekler, `.git` ve sanal ortamlar paket dışıdır. Basit gömülü anahtar taraması da yapılır; bu tam bir secret audit garantisi değildir.
+
+ZIP'i açıp içindeki `bR-vA` klasörünün kaynaklarını kendi GitHub Desktop çalışma kopyanıza alabilir, değişiklikleri kendiniz inceleyerek commit/push yapabilirsiniz. ZIP dosyasını tek başına kaynak kod gibi GitHub'a yüklemek uygulamanın dosyalarını açmaz. Birden fazla dosyalı manuel tarayıcı yüklemesinde GitHub'ın yükleme sınırlarına göre gruplar kullanın.
+
+19 Ekimde asıl `Desktop/envaner` klasörü ayrıca salt okunur karşılaştırıldı. Özgün `storage.css` kompakt liste stilleri geri alındı. Ek eski bakım betikleri, migration ve yapılacaklar notu `docs/original-reference/` altında çalıştırılmayan metin referansları olarak korunur; eski API testindeki gömülü anahtar temizlenmiştir. Güncel uygulama kodunun üzerine eski sürüm kopyalanmadı.
+
+Bağımlılık duyurularını yeniden sorgulama: `python audit_dependencies.py`. Yalnız herkese açık paket adı/sürümü OSV'ye gider. Son sorgu 33 paket/sürüm çifti için eşleşme vermedi; CDN/opsiyonel bileşenler ve yeni duyurular için ayrıca değerlendirme gerekir.

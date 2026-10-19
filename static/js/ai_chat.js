@@ -25,17 +25,12 @@ document.addEventListener("DOMContentLoaded", () => {
         const msgDiv = document.createElement("div");
         msgDiv.className = `message ${sender}-message`;
         
-        // AI mesajı ise Markdown parse et
-        let contentHTML = text;
-        if (sender === 'ai' && typeof marked !== 'undefined') {
-            // marked kütüphanesi yüklüyse markdown'ı HTML'e çevir
-            contentHTML = marked.parse(text);
-        } else {
-            // Kullanıcı mesajı ise sadece satır atlamaları düzelt
-            contentHTML = text.replace(/\n/g, '<br>');
-        }
-
-        msgDiv.innerHTML = `<div class="message-content">${contentHTML}</div>`;
+        // Product notes, user messages and model output are untrusted text.
+        const content = document.createElement('div');
+        content.className = 'message-content';
+        content.style.whiteSpace = 'pre-wrap';
+        content.textContent = String(text == null ? '' : text);
+        msgDiv.appendChild(content);
         
         messagesArea.appendChild(msgDiv);
         scrollToBottom();
@@ -90,15 +85,15 @@ document.addEventListener("DOMContentLoaded", () => {
             removeTyping(loader);
 
             if (data.ai_response) {
-                // Cevabı ekle (Markdown parser otomatik çalışacak)
+                // Display model output as text; no HTML interpretation.
                 addMessage(data.ai_response, "ai");
                 
                 // Eğer sayfa yenilenmesi gerekiyorsa (stok eklendi vb.)
                 if (typeof loadProducts === 'function') {
                     loadProducts();
                 }
-            } else if (data.error) {
-                addMessage("⚠️ Hata: " + data.error, "ai");
+            } else if (data.error || data.message) {
+                addMessage("⚠️ " + (data.message || data.error?.message || data.error), "ai");
             }
 
         } catch (error) {

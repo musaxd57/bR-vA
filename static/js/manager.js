@@ -14,6 +14,8 @@ document.addEventListener("DOMContentLoaded", () => {
     // ======================================================
 
     const salesTimeFilter = document.getElementById("sales-time-filter");
+    const isAccountOwner = document.body.dataset.accountOwner === 'true';
+    let archiveLoaded = false;
 
     // Çalışan Ekleme ve Temel Elementler
     const ekleBtn = document.querySelector(".calisan-ekle-btn");
@@ -67,7 +69,7 @@ document.addEventListener("DOMContentLoaded", () => {
     const showProductChartBtn = document.getElementById('show-product-chart-btn');
     const resetChartsBtn = document.getElementById('reset-charts-btn');
 
-    const tabs = document.querySelectorAll(".tab-link");
+    const tabs = document.querySelectorAll(".tab-link[data-tab]");
     let chartInstances = {};
 
     // ======================================================
@@ -154,44 +156,15 @@ document.addEventListener("DOMContentLoaded", () => {
         }
       }
 
-      // İşlem fişini (PDF) indir
-      const transactionPdfBtn = e.target.closest('.download-transaction-btn');
-      if (transactionPdfBtn) {
-          const groupId = transactionPdfBtn.dataset.groupId;
-          if (groupId) window.open(`/generate_transaction_pdf/${groupId}`, '_blank');
-      }
-
       // Tekil satış fişini (PDF) indir
       const downloadButton = e.target.closest('.download-single-btn');
       if (downloadButton) {
           const saleId = downloadButton.dataset.saleId;
-          if (saleId) window.open(`/generate_single_lod_pdf/${saleId}`, '_blank');
+          if (saleId) window.open(`/generate_single_lod_pdf/${encodeURIComponent(saleId)}`, '_blank', 'noopener,noreferrer');
       }
 
 
 
-      // İzin yönetme butonu
-      const manageBtn = e.target.closest('#employee-body .izin-yonet-btn');
-      if (manageBtn) {
-          const userRow = manageBtn.closest('tr');
-          const userId = userRow.dataset.id;
-          const username = userRow.dataset.username;
-          modalUserIdInput.value = userId;
-          modalEmployeeName.textContent = username;
-          try {
-              const response = await fetch(`/get_user_permissions/${userId}`);
-              if (!response.ok) { showToast('İzinler alınamadı!', 'err'); return; }
-              const permissions = await response.json();
-              for (const key in permissions) {
-                  const checkbox = document.getElementById(`perm-${key}`);
-                  if (checkbox) checkbox.checked = permissions[key];
-              }
-              permissionsModal.classList.remove('hidden');
-          } catch (error) {
-              console.error('İzinler çekilirken hata:', error);
-              showToast('Sunucu hatası!', 'err');
-          }
-      }
   });
 
     // Modal Kapatma İşlemleri (Mesaj Modalı)
@@ -331,7 +304,8 @@ document.addEventListener("DOMContentLoaded", () => {
     if (ekleBtn) {
         ekleBtn.addEventListener("click", async () => {
             const isim = (isimInput.value || "").trim();
-            const sifre = (sifreInput.value || "").trim();
+            const sifre = sifreInput.value || "";
+            if (!isimInput.reportValidity() || !sifreInput.reportValidity()) return;
             if (!isim || !sifre) {
                 showToast("Lütfen tüm alanları doldurun!", "err");
                 return;
@@ -440,31 +414,32 @@ document.addEventListener("DOMContentLoaded", () => {
         const transactionPdfBtn = e.target.closest('.download-transaction-btn');
         if (transactionPdfBtn) {
             const groupId = transactionPdfBtn.dataset.groupId;
-            if (groupId) window.open(`/generate_transaction_pdf/${groupId}`, '_blank');
+            if (groupId) window.open(`/generate_transaction_pdf/${encodeURIComponent(groupId)}`, '_blank', 'noopener,noreferrer');
             return;
         }
 
-        // D. Çalışan Silme Butonu
-        const deleteBtn = e.target.closest("#employee-body .sil-btn");
-        if (deleteBtn) {
-            const tr = deleteBtn.closest("tr");
-            const userId = tr.dataset.id;
-            if (!confirm(`'${tr.children[0].textContent}' adlı çalışanı silmek istediğinize emin misiniz?`)) return;
-            fetch(`/deleteuser/${userId}`, {
-                    method: "DELETE"
-                })
-                .then(res => {
-                    if (res.ok) {
-                        showToast("Çalışan silindi.", "ok");
-                        tr.remove();
-                    } else {
-                        res.json().then(data => showToast(data.message || "Silme hatası!", "err"));
-                    }
-                })
-                .catch(err => {
-                    console.error(err);
-                    showToast("Sunucu hatası!", "err");
-                });
+        // D. Kimliği ve geçmişi koruyarak çalışan erişimini değiştir.
+        const accessBtn = e.target.closest("#employee-body .access-btn");
+        if (accessBtn) {
+            if (!isAccountOwner || accessBtn.disabled) return;
+            const tr = accessBtn.closest("tr");
+            const enabled = accessBtn.dataset.enable === 'true';
+            const reason = window.prompt(`${tr.dataset.username}: erişimi ${enabled ? 'açma' : 'kapatma'} nedeni (3–240 karakter)`);
+            if (reason === null) return;
+            if (reason.trim().length < 3 || reason.trim().length > 240) {
+                showToast('Lütfen 3–240 karakterlik bir neden yazın.', 'err'); return;
+            }
+            accessBtn.disabled = true;
+            fetch(`/api/account-security/employees/${encodeURIComponent(tr.dataset.id)}/access`, {
+                method: 'POST', headers: { 'Content-Type': 'application/json' },
+                body: JSON.stringify({ enabled, reason: reason.trim() })
+            }).then(async response => {
+                const body = await response.json();
+                if (!response.ok) throw new Error(body.error?.message || 'Erişim güncellenemedi.');
+                showToast(enabled ? 'Çalışanın erişimi açıldı.' : 'Erişim kapatıldı. Açık oturumlar sonlandırıldı.', 'ok');
+                await fetchUsers();
+            }).catch(error => showToast(error.message || 'Bağlantı kurulamadı.', 'err'))
+              .finally(() => { accessBtn.disabled = false; });
             return;
         }
 
@@ -769,12 +744,14 @@ document.addEventListener("DOMContentLoaded", () => {
             const tr = document.createElement("tr");
             tr.dataset.id = user.id;
             tr.dataset.username = user.username;
+            const ownerProtected = ['admin', 'owner'].includes(user.role);
+            const canControl = typeof isAccountOwner !== 'undefined' && isAccountOwner && !ownerProtected;
             tr.innerHTML = `
-          <td data-label="Adı">${user.username}</td>
-          <td data-label="İzinler"><button class="izin-yonet-btn btn-secondary">İzinleri Yönet</button></td>
+          <td data-label="Adı">${BrivaDOM.escapeHtml(user.username)}<br><small>${user.active === false ? 'Erişim kapalı' : 'Aktif'}${ownerProtected ? ' · İşletme sahibi' : ''}</small></td>
+          <td data-label="İzinler">${canControl ? '<button class="izin-yonet-btn btn-secondary">İzinleri Yönet</button>' : '<span>İşletme sahibi yönetir</span>'}</td>
           <td data-label="İşlem">
               <button class="btn-message btn-primary" title="Mesaj Gönder"><i class="ri-message-2-line"></i></button>
-              <button class="sil-btn btn-danger" title="Sil"><i class="ri-delete-bin-line"></i></button>
+              ${canControl ? `<button class="access-btn ${user.active === false ? 'btn-secondary' : 'btn-danger'}" data-enable="${user.active === false ? 'true' : 'false'}" type="button">${user.active === false ? 'Erişimi aç' : 'Erişimi kapat'}</button>` : ''}
           </td>`;
             tabloBody.appendChild(tr);
         });
@@ -803,20 +780,20 @@ document.addEventListener("DOMContentLoaded", () => {
             const mainRow = document.createElement("tr");
             mainRow.className = 'sales-group-main';
             const totalAmountFormatted = Object.entries(group.totals)
-                .map(([currency, total]) => `${total.toFixed(2)} ${currency}`).join(' + ');
+                .map(([currency, total]) => `${BrivaDOM.finiteNumber(total).toFixed(2)} ${BrivaDOM.escapeHtml(currency)}`).join(' + ');
 
             mainRow.innerHTML = `
             <td data-label="Müşteri">
                 <div class="main-cell-content">
                     <i class="ri-arrow-down-s-line details-icon"></i>
-                    <span>${group.customer_name}</span>
+                    <span>${BrivaDOM.escapeHtml(group.customer_name)}</span>
                 </div>
             </td>
             <td data-label="Toplam Tutar"><strong>${totalAmountFormatted}</strong></td>
-            <td data-label="Satan Kişi">${group.sold_by}</td>
-            <td data-label="Tarih">${group.sale_date}</td>
+            <td data-label="Satan Kişi">${BrivaDOM.escapeHtml(group.sold_by)}</td>
+            <td data-label="Tarih">${BrivaDOM.escapeHtml(group.sale_date)}</td>
             <td data-label="Fiş İndir" class="action-cell">
-              <button class="btn btn-primary download-transaction-btn" data-group-id="${group.sale_group_id}" title="Bu işlem fişini PDF olarak indir">
+              <button class="btn btn-primary download-transaction-btn" data-group-id="${BrivaDOM.escapeHtml(group.sale_group_id)}" title="Bu işlem fişini PDF olarak indir">
                 <i class="ri-file-download-line"></i>
               </button>
             </td>
@@ -826,17 +803,17 @@ document.addEventListener("DOMContentLoaded", () => {
             detailsRow.className = 'sales-group-details hidden';
             let detailsHtml = `
             <td colspan="5"><div class="details-content">
-                    <h4>İşlem Detayları (ID: ...${group.sale_group_id.slice(-12)})</h4>
+                    <h4>İşlem Detayları (ID: ...${BrivaDOM.escapeHtml(String(group.sale_group_id).slice(-12))})</h4>
                     <table><thead><tr><th>Ürün</th><th>Renk</th><th>Adet (Seri)</th><th>Beden Dökümü</th><th>Birim Fiyat</th><th>Toplam</th></tr></thead><tbody>`;
             group.items.forEach(item => {
-                const sizesBreakdownStr = item.sizes_breakdown ? item.sizes_breakdown.map(s => `${s.quantity} ${s.value}`).join(' / ') : 'N/A';
+                const sizesBreakdownStr = item.sizes_breakdown ? item.sizes_breakdown.map(s => `${BrivaDOM.finiteNumber(s.quantity)} ${BrivaDOM.escapeHtml(s.value)}`).join(' / ') : 'N/A';
                 detailsHtml += `<tr>
-                    <td>${item.product_name} (${item.product_code})</td>
-                    <td>${item.color_name}</td>
-                    <td>${item.quantity}</td>
+                    <td>${BrivaDOM.escapeHtml(item.product_name)} (${BrivaDOM.escapeHtml(item.product_code)})</td>
+                    <td>${BrivaDOM.escapeHtml(item.color_name)}</td>
+                    <td>${BrivaDOM.finiteNumber(item.quantity)}</td>
                     <td>${sizesBreakdownStr}</td>
-                    <td>${item.price_at_sale.toFixed(2)} ${item.currency}</td>
-                    <td>${item.total_price.toFixed(2)} ${item.currency}</td>
+                    <td>${BrivaDOM.finiteNumber(item.price_at_sale).toFixed(2)} ${BrivaDOM.escapeHtml(item.currency)}</td>
+                    <td>${BrivaDOM.finiteNumber(item.total_price).toFixed(2)} ${BrivaDOM.escapeHtml(item.currency)}</td>
                 </tr>`;
             });
             detailsHtml += '</tbody></table></div></td>';
@@ -911,14 +888,15 @@ document.addEventListener("DOMContentLoaded", () => {
         employees.forEach((employee, index) => {
             const item = document.createElement("div");
             item.className = `employee-rank-item rank-${index + 1}`;
-            item.innerHTML = `<span class="rank-number">${index + 1}</span><div class="employee-info"><span class="username">${employee.username}</span><span class="sales-count">${employee.sales_count} satış</span></div>`;
+            item.innerHTML = `<span class="rank-number">${index + 1}</span><div class="employee-info"><span class="username">${BrivaDOM.escapeHtml(employee.username)}</span><span class="sales-count">${BrivaDOM.finiteNumber(employee.sales_count)} satış</span></div>`;
             topEmployeesList.appendChild(item);
         });
     }
 
     function activateTabFromHash() {
-        const hash = window.location.hash.substring(1) || 'gosterge-paneli'; // Varsayılan sekme
-        const targetTab = document.querySelector(`.tab-link[data-tab='${hash}']`);
+        const selected = window.location.hash.substring(1);
+        const hash = ['gosterge-paneli', 'calisan-yonetimi', 'satis-gecmisi'].includes(selected) ? selected : 'calisan-yonetimi';
+        const targetTab = Array.from(tabs).find(tab => tab.dataset.tab === hash);
         const targetPanel = document.getElementById(hash);
 
         if (targetTab && targetPanel) {
@@ -926,6 +904,11 @@ document.addEventListener("DOMContentLoaded", () => {
             document.querySelectorAll('.tab-panel.active').forEach(p => p.classList.remove('active'));
             targetTab.classList.add('active');
             targetPanel.classList.add('active');
+            if (hash !== 'calisan-yonetimi' && !archiveLoaded) {
+                archiveLoaded = true;
+                fetchSalesStats(); renderCombinedSalesChart(); fetchPaginatedSales(1);
+                populateProductDatalist(); populateCustomerSelect();
+            }
         }
     }
 
@@ -933,11 +916,6 @@ document.addEventListener("DOMContentLoaded", () => {
     // 5. BAŞLANGIÇ (INIT)
     // ======================================================
     fetchUsers();
-    fetchSalesStats();
-    renderCombinedSalesChart();
-    fetchPaginatedSales(1);
-    populateProductDatalist();
     activateTabFromHash();
     window.addEventListener('hashchange', activateTabFromHash);
-    populateCustomerSelect();
 });

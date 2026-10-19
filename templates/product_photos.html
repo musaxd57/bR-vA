@@ -1,0 +1,47 @@
+<!doctype html>
+<html lang="tr">
+<head>
+  <meta charset="utf-8">
+  <meta name="viewport" content="width=device-width,initial-scale=1">
+  <title>Ürün fotoğrafları · BRIVA</title>
+  {% include '_security_head.html' %}
+  <link rel="stylesheet" href="{{ url_for('static', filename='product_photos.css') }}">
+  <script src="{{ url_for('static', filename='js/product_photos.js') }}" defer></script>
+</head>
+<body>
+  <a class="skip" href="#main">İçeriğe geç</a>
+  <header><a class="brand" href="{{ url_for('workbench') }}"><span>B</span> BRIVA</a><a href="{{ url_for('workbench') }}#catalog">← Ürünlere dön</a></header>
+  <main id="main" tabindex="-1">
+    <p class="eyebrow">ÜRÜNÜN GÖRÜNÜMÜ</p>
+    <h1>Modelini görerek tanı.</h1>
+    <p class="intro">Ürün fotoğraflarını modeline bağla. Renk ve beden barkodların aynı kalır.</p>
+    <p id="photo-actor" class="account"></p>
+    <div id="photo-message" class="message" role="status" aria-live="polite" hidden></div>
+    <div class="layout">
+      <section class="card catalogue">
+        <h2>Model seç</h2>
+        <form id="photo-search"><label for="photo-query">Model kodu veya adı</label><div class="search"><input id="photo-query" maxlength="160" autocomplete="off" placeholder="Örn. OX-0125"><button type="submit">Ara</button></div></form>
+        <p id="photo-count" class="hint">Ürünler yükleniyor…</p>
+        <div id="photo-models" class="models" aria-live="polite"></div>
+        <button id="photo-more" type="button" hidden>Diğer modelleri yükle</button>
+      </section>
+      <div>
+        <section class="card">
+          <div class="section-title"><div><p class="eyebrow">SEÇİLİ MODEL</p><h2 id="photo-model-title">Bir model seçin.</h2></div><span id="photo-history-count" class="badge" hidden></span></div>
+          <div id="photo-empty" class="empty">Önce soldan model seçin. Yeni modeli Ürünler &amp; seriler ekranından sıfır stokla açabilirsiniz.</div>
+          <form id="photo-upload" hidden>
+            <p class="hint">JPEG, PNG veya WebP seçin. Fotoğraf tarayıcıda küçültülür; konum ve kamera bilgileri saklanmaz.</p>
+            <label class="file" for="photo-file">Fotoğraf seç<input id="photo-file" type="file" accept="image/jpeg,image/png,image/webp" required></label>
+            <div id="photo-preview-wrap" class="preview" hidden><img id="photo-preview" alt="Yüklenecek ürün fotoğrafı"><span id="photo-file-summary" class="hint"></span></div>
+            <button id="photo-save" class="primary" type="submit" disabled>Fotoğrafı modele ekle</button>
+          </form>
+          <p id="photo-readonly" class="note" hidden>Fotoğraf eklemek için ürün düzenleme yetkisi gerekir. Mevcut fotoğrafları görüntüleyebilirsiniz.</p>
+          <div id="photo-pending" class="note" hidden><strong>Önceki yüklemenin sonucu bekleniyor.</strong><p id="photo-pending-description"></p><button id="photo-retry" type="button">Aynı yüklemenin sonucunu kontrol et</button></div>
+        </section>
+        <section class="card"><h2>Fotoğraf geçmişi</h2><p class="hint">En yeni fotoğraf önce gösterilir. Önceki fotoğraflar kayıtta kalır; ürün stoku bu işlemle değişmez.</p><div id="photo-gallery" class="gallery" aria-live="polite"><p class="hint">Seçili model yok.</p></div></section>
+      </div>
+    </div>
+    <footer>BRIVA · Fotoğraflar yalnız işletmenizin oturumuyla açılır.</footer>
+  </main>
+</body>
+</html>
