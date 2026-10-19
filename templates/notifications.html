@@ -1,0 +1,123 @@
+<!DOCTYPE html>
+<html lang="tr">
+<head>
+  <meta charset="UTF-8" />
+  <meta name="viewport" content="width=device-width, initial-scale=1.0"/>
+  <title>Bildirimler | Envaner</title>
+  
+  <!-- Fontlar ve İkonlar -->
+  <link rel="preconnect" href="https://fonts.googleapis.com">
+  <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+  <link href="https://fonts.googleapis.com/css2?family=Inter:wght@400;500;600;700&display=swap" rel="stylesheet">
+  <link href="https://cdn.jsdelivr.net/npm/remixicon@4.2.0/fonts/remixicon.css" rel="stylesheet">
+  
+  <!-- CSS Dosyaları -->
+  <link rel="stylesheet" href="{{ url_for('static', filename='sidebar.css') }}">
+  <link rel="stylesheet" href="{{ url_for('static', filename='notifications.css') }}">
+</head>
+<body>
+
+  <!-- Sidebar -->
+  {% include "sidebar.html" %}
+
+  <!-- Ana İçerik -->
+  <main class="main-container">
+    
+    <!-- Profil Sayfası Gibi Tek Bir Büyük Kart -->
+    <section class="card">
+      
+      <!-- Kart Başlığı -->
+      <div class="card-header">
+        <div class="header-left">
+          <h2 class="card-title"><i class="ri-notification-3-line"></i>Bildirimler</h2>
+          <p>Sistem uyarıları ve işlem geçmişi buradan takip edilebilir.</p>
+        </div>
+        <div class="header-right">
+          <button id="btn-mark-all" class="btn-action">
+            <i class="ri-checkbox-double-line"></i> Tümünü Okundu İşaretle
+          </button>
+        </div>
+      </div>
+
+      <!-- Bildirim Listesi (Kartın Gövdesi) -->
+      <div class="notification-list">
+        {% if notifications %}
+          {% for notif in notifications %}
+          <!-- Her bir bildirim artık bir liste elemanı (item) -->
+          <div class="notification-item {{ notif.type }} {% if not notif.read %}unread{% endif %}" id="notif-{{ notif.id }}">
+            
+            <!-- İkon -->
+            <div class="notif-icon-box">
+              {% if notif.type == 'warning' %}<i class="ri-alert-fill"></i>
+              {% elif notif.type == 'success' %}<i class="ri-checkbox-circle-fill"></i>
+              {% elif notif.type == 'error' %}<i class="ri-error-warning-fill"></i>
+              {% else %}<i class="ri-information-fill"></i>{% endif %}
+            </div>
+            
+            <!-- İçerik -->
+            <div class="notif-content">
+              <div class="notif-header">
+                <span class="notif-title">{{ notif.title }}</span>
+                <span class="notif-time"><i class="ri-time-line"></i> {{ notif.date }}</span>
+              </div>
+              <p class="notif-message">{{ notif.message }}</p>
+            </div>
+
+            <!-- Aksiyon Butonu -->
+            <div class="notif-actions">
+              {% if not notif.read %}
+              <button class="btn-icon check" onclick="markRead('{{ notif.id }}')" title="Okundu işaretle">
+                <i class="ri-check-line"></i>
+              </button>
+              {% endif %}
+            </div>
+          </div>
+          {% endfor %}
+        {% else %}
+          <!-- Boş Durum -->
+          <div class="empty-state">
+            <i class="ri-notification-off-line"></i>
+            <h3>Bildiriminiz Yok</h3>
+            <p>Şu an için size ulaşan yeni bir bildirim bulunmuyor.</p>
+          </div>
+        {% endif %}
+      </div>
+
+    </section>
+  </main>
+  
+  <!-- JavaScript -->
+  <script>
+      async function markRead(id) {
+          try {
+              const res = await fetch(`/mark_read/${id}`, { method: 'POST' });
+              const data = await res.json();
+              
+              if (data.status === 'ok') {
+                  const item = document.getElementById(`notif-${id}`);
+                  item.classList.remove('unread');
+                  const btn = item.querySelector('.btn-icon.check');
+                  if(btn) btn.remove();
+              }
+          } catch (err) {
+              console.error('Hata:', err);
+          }
+      }
+
+      document.getElementById('btn-mark-all').addEventListener('click', async () => {
+          if(!confirm("Tüm bildirimleri okundu olarak işaretlemek istiyor musunuz?")) return;
+          
+          try {
+              const res = await fetch(`/mark_all_read`, { method: 'POST' });
+              const data = await res.json();
+              
+              if (data.status === 'ok') {
+                  window.location.reload();
+              }
+          } catch (err) {
+              console.error('Hata:', err);
+          }
+      });
+  </script>
+</body>
+</html>

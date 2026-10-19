@@ -1,0 +1,1120 @@
+<!DOCTYPE html>
+<html lang="tr">
+<head>
+  <meta charset="utf-8" />
+  <meta name="viewport" content="width=device-width,initial-scale=1" />
+  <title>envaner | Depo Yönetim Paneli</title>
+  
+  <!-- Modern Font Ailesi -->
+  <link rel="preconnect" href="https://fonts.googleapis.com">
+  <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+  <link href="https://fonts.googleapis.com/css2?family=Inter:wght@400;500;600;700&display=swap" rel="stylesheet">
+  
+  <!-- CSS Dosyaları -->
+  <link rel="stylesheet" href="/static/storage.css">
+  <link rel="stylesheet" href="/static/sidebar.css">
+  <link rel="stylesheet" href="/static/ai_chat.css">
+  
+  <!-- İkon Kütüphaneleri -->
+  <link href="https://cdn.jsdelivr.net/npm/remixicon@4.2.0/fonts/remixicon.css" rel="stylesheet">
+  <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.4.0/css/all.min.css"/>
+</head>
+<body>
+
+  <!-- Sidebar -->
+  {% include "sidebar.html" %}
+
+  <main class="main-container" aria-label="Depo Paneli">
+
+    <div class="tabs-navigation">
+  <a href="#" class="tab-link active" data-tab="sadece-sorgula">
+    <i class="ri-search-eye-line"></i> Hızlı Sorgu
+  </a>
+  <a href="#" class="tab-link" data-tab="yeni-urun-ekle">
+    <i class="ri-add-box-line"></i> Yeni Ürün Ekle
+  </a>
+  <a href="#" class="tab-link" data-tab="sorgula-ve-sat">
+    <i class="ri-shopping-cart-2-line"></i> Sorgula ve Sat
+  </a>
+  <a href="#" class="tab-link" data-tab="mevcut-stoklar">
+    <i class="ri-archive-stack-line"></i> Mevcut Stoklar
+  </a>
+  <a href="#" class="tab-link" data-tab="gider-ekle">
+    <i class="ri-money-dollar-circle-line"></i> Gider Ekle
+  </a>
+  <a href="#" class="tab-link" data-tab="gelen-siparisler">
+    <i class="ri-inbox-archive-line"></i> Gelen Siparişler
+  </a>
+  <a href="#" class="tab-link" data-tab="depoya-yerlestir">
+    <i class="ri-map-pin-add-line"></i> Depoya Yerleştir
+  </a>
+  <a href="#" class="tab-link" data-tab="nitelik-yonetimi">
+    <i class="ri-equalizer-line"></i> Nitelik Yönetimi
+  </a>
+  <a href="#" class="tab-link" data-tab="barkod-kurallari">
+    <i class="ri-barcode-box-line"></i> Barkod Kuralları
+  </a>
+</div>
+
+    <!-- SEKME İÇERİKLERİ -->
+    <section id="sadece-sorgula" class="tab-panel">
+    <div class="search-hero-container">
+        <div class="search-hero-content">
+        <div class="hero-icon">
+            <i class="ri-search-eye-line"></i>
+        </div>
+        <h2 class="hero-title">Ürün Sorgula</h2>
+        <p class="hero-subtitle">Barkod numarasını veya ürün kodunu girin.</p>
+        
+        <form id="formSorguDetay" class="hero-form">
+            <div class="hero-input-group">
+                <i class="ri-barcode-line input-icon"></i>
+                <input id="s-kod-detay" name="code" type="text" placeholder="Aramak için yazın..." autocomplete="off">
+                <button type="submit" class="hero-btn">
+                    <i class="ri-arrow-right-line"></i>
+                </button>
+            </div>
+        </form>
+        </div>
+
+        <!-- Sonuçların gösterileceği yer (Kart Tasarımı) -->
+        <div id="sorgu-sonuc-detay" class="hero-result-area">
+            <!-- JS burayı dolduracak, başlangıçta boş -->
+        </div>
+    </div>
+    </section>
+      <!-- Yeni Ürün Ekle Paneli -->
+      <section id="yeni-urun-ekle" class="tab-panel">
+    
+        <div class="product-create-wrapper">
+            <form action="/product" method="post" id="form-ekle" class="create-form">
+                <!-- YENİ: Hızlı Barkod Okutma Alanı -->
+                <div style="background: #F8FAFC; border: 1px solid #E2E8F0; padding: 15px 20px; border-radius: 12px; margin-bottom: 25px;">
+                    <label style="font-weight: 700; font-size: 0.95rem; color: #1E293B; display: block; margin-bottom: 10px;">
+                        <i class="ri-qr-scan-2-line" style="color: var(--primary-color);"></i> Hazır Barkod ile Otomatik Doldur
+                    </label>
+                    
+                    <div style="display: flex; gap: 10px; align-items: center;">
+                        <div class="search-input-wrapper" style="flex: 1; background: #fff; border: 1px solid #CBD5E1;">
+                            <i class="ri-barcode-box-line search-icon"></i>
+                            <input id="quick-barcode-input" class="urun-kod-input" type="text" placeholder="Üreticiden gelen barkodu okutun (Örn: TP0CEK5502)..." autocomplete="off" style="text-transform: uppercase;">
+                        </div>
+                    </div>
+                    
+                    <!-- Geri Bildirim Mesajı (Geçerli/Geçersiz) -->
+                    <div id="quick-barcode-feedback" style="margin-top: 10px; font-size: 0.85rem; font-weight: 600;"></div>
+                </div>
+                <div class="create-grid">
+                    
+                    <!-- SOL KOLON: GÖRSEL VE TEMEL BİLGİ -->
+                    <div class="create-col-left">
+                        
+                        <!-- Görsel Yükleme Alanı -->
+                        <div class="image-upload-zone">
+                            <input type="file" id="productImage" name="image" accept="image/*" class="hidden-file-input">
+                            <label for="productImage" class="upload-label">
+                                <div class="icon-circle"><i class="ri-image-add-line"></i></div>
+                                <span>Ürün Görseli Yükle</span>
+                                <small>JPG, PNG, WEBP</small>
+                            </label>
+                        </div>
+
+                        <!-- İsim -->
+                        <div class="modern-input-group">
+                            <label>Ürün Adı</label>
+                            <input id="urun-adi" name="name" type="text" placeholder="Örn: Slim Fit Gömlek" required class="clean-inp big-text">
+                        </div>
+
+                        <!-- Açıklama -->
+                        <div class="modern-input-group">
+                            <label>Açıklama</label>
+                            <textarea id="description" name="description" placeholder="Ürün detayları..." class="clean-inp textarea"></textarea>
+                        </div>
+
+                    </div>
+
+                    <!-- SAĞ KOLON: DETAYLAR VE FİYAT -->
+                    <div class="create-col-right">
+                        
+                        <div class="modern-card-inner">
+                            <h4 class="section-head">Özellikler</h4>
+                            
+                            <div class="attrs-row">
+                                <!-- Kategori -->
+                                <div class="modern-input-group">
+                                    <label>Kategori</label>
+                                    <div class="select-wrapper">
+                                        <select id="categorySelect" name="category" required class="clean-select"><option value="">Seçiniz</option></select>
+                                        <i class="ri-arrow-down-s-line"></i>
+                                    </div>
+                                </div>
+
+                            </div>
+
+                            <!-- Renk Seçimi -->
+                            <div class="modern-input-group">
+                                <label>Renkler</label>
+                                <div class="color-adder-modern">
+                                    <div class="select-wrapper flex-grow">
+                                        <select id="colorSelect" class="clean-select"><option value="">Renk Seçin</option></select>
+                                        <i class="ri-arrow-down-s-line"></i>
+                                    </div>
+                                    <button type="button" id="addColorBtn" class="btn-icon-add"><i class="ri-add-line"></i></button>
+                                </div>
+                                <div id="selectedColorsContainer" class="tags-container">
+                                    <span class="placeholder-tag">Renk eklenmedi</span>
+                                </div>
+                            </div>
+
+                            <!-- Beden Dağılımı (JS Dolduracak) -->
+                            <div class="modern-input-group">
+                                <div class="label-row">
+                                    <label>Beden & Stok</label>
+                                    <div class="totals-badge">
+                                        <span title="Serideki Toplam">Serideki Ürün Sayısı <b id="total-sizes">0</b></span>
+                                        <span title="Depo Toplamı">| Depodaki Ürün sayısı <b id="total-products">0</b></span>
+                                    </div>
+                                </div>
+                                <div id="sizes-container" class="sizes-box-modern">
+                                    <span class="placeholder-text-center">Önce kategori seçiniz.</span>
+                                </div>
+                            </div>
+                            <!-- Dinamik Özellikler Alanı (Ürün Ekleme Formu İçinde) -->
+                            <div class="modern-input-group" id="custom-attributes-wrapper" style="display:none; margin-top: 20px; border-top: 1px dashed #E5E7EB; padding-top: 15px;">
+                                <div class="label-row">
+                                    <label style="color:#4F46E5;">Ek Özellikler</label>
+                                </div>
+                                <!-- JS buraya inputları basacak -->
+                                <div id="dynamic-attributes-container" style="display: grid; grid-template-columns: 1fr 1fr; gap: 15px;">
+                                </div>
+                            </div>
+                            <!-- Fiyatlandırma -->
+                            <div class="modern-input-group" id="price-container">
+                                <label>Fiyatlar</label>
+                                <div class="price-grid-modern">
+                                    <div class="price-box">
+                                        <span>TL</span>
+                                        <input type="number" min="0" step="0.01" class="price-input clean-inp" data-size="TL" placeholder="0.00">
+                                    </div>
+                                    <div class="price-box">
+                                        <span>USD</span>
+                                        <input type="number" min="0" step="0.01" class="price-input clean-inp" data-size="USD" placeholder="0.00">
+                                    </div>
+                                    <div class="price-box">
+                                        <span>EUR</span>
+                                        <input type="number" min="0" step="0.01" class="price-input clean-inp" data-size="EURO" placeholder="0.00">
+                                    </div>
+                                </div>
+                            </div>
+
+                        </div>
+                        
+                        <!-- Ürün Kodu Önizleme Alanı -->
+                        <div class="generated-code-preview">
+                            <div class="code-info">
+                                <span class="code-label">
+                                    <i class="ri-barcode-box-line"></i> Oluşturulacak Ürün Kodu:
+                                </span>
+                                <!-- JS ile bu değer güncellenecek -->
+                                <span class="code-value" id="preview-product-code">---</span>
+                            </div>
+                            <p class="code-hint">Kod, seçtiğiniz kategori ve özelliklere göre otomatik oluşturulur.</p>
+                        </div>
+                        
+                        <!-- Kaydet Butonu -->
+                        <button type="submit" class="btn-save-modern">
+                            <i class="ri-check-double-line"></i> Ürünü Kaydet
+                        </button>
+
+                    </div>
+                </div>
+            </form>
+        </div>
+    </section>
+      <!-- Sorgulama ve Satış Paneli -->
+      <section id="sorgula-ve-sat" class="tab-panel">
+        <div class="pos-container">
+            
+            <!-- ÜST BÖLÜM: ARAMA + ÜRÜN BİLGİSİ + AYARLAR -->
+            <div class="pos-top-section">
+                
+                <!-- SOL: Arama ve Ürün Görüntüleme -->
+                <div class="pos-search-area">
+                    <div class="pos-search-box" style="margin-bottom: 20px;">
+                        <form method="get" action="/products" id="formSorgu" class="search-form">
+                            <div class="search-input-wrapper">
+                                <i class="ri-search-2-line search-icon"></i>
+                                <input id="s-kod" class="urun-kod-input" name="code" type="text" placeholder="Barkod okutun veya ürün kodu yazın..." autocomplete="off">
+                                <button type="button" id="start-scan-btn" class="scan-btn" title="Kamerayı Aç">
+                                    <i class="ri-qr-scan-2-line"></i>
+                                </button>
+                            </div>
+                            <div id="barcode-scanner-container" style="display: none; margin-top: 10px;">
+                                <div id="barcode-scanner"></div>
+                                <button type="button" id="stop-scan-btn" class="btn-secondary full-width" style="margin-top:5px;">Kamerayı Kapat</button>
+                            </div>
+                        </form>
+                    </div>
+
+                    <!-- Sorgu Sonucu Kartı -->
+                    <div id="sorgu-sonuc" class="product-display-area">
+                        <div class="empty-state-icon">
+                            <i class="ri-barcode-box-line"></i>
+                            <p>İşlem yapmak için ürün sorgulayın</p>
+                        </div>
+                    </div>
+                </div>
+
+                <!-- SAĞ: Satış Ayarları Formu -->
+                <div class="pos-settings-area">
+                    <form id="form-satis-ekle" class="pos-settings-form" style="height: 100%; display: flex; flex-direction: column; justify-content: center;">
+                        <input id="satis-kod" name="code" type="hidden" readonly>
+
+                        <div class="settings-grid">
+                            <!-- Satış Tipi -->
+                            <div class="setting-group">
+                                <label class="setting-label">Satış Tipi</label>
+                                <div class="sale-type-selector modern-toggle">
+                                    <label class="radio-label">
+                                        <input type="radio" name="saleType" value="series" checked>
+                                        <span class="radio-custom"><i class="ri-stack-line"></i> Seri</span>
+                                    </label>
+                                    <label class="radio-label">
+                                        <input type="radio" name="saleType" value="single">
+                                        <span class="radio-custom"><i class="ri-t-shirt-line"></i> Parça</span>
+                                    </label>
+                                </div>
+                            </div>
+
+                            <!-- Para Birimi -->
+                            <div class="setting-group">
+                                <label class="setting-label">Para Birimi</label>
+                                <div id="currency-buttons" class="currency-selector modern-toggle">
+                                    <button type="button" class="currency-btn" data-currency="TL">TL</button>
+                                    <button type="button" class="currency-btn" data-currency="USD">USD</button>
+                                    <button type="button" class="currency-btn" data-currency="EURO">EUR</button>
+                                </div>
+                                <input type="hidden" id="selected-currency" name="currency">
+                                <input type="hidden" id="selected-price" name="price">
+                                <p id="selected-price-display" style="font-size: 0.9rem; margin-top: 5px; color: #2563EB; font-weight: 600; text-align: center;"></p>
+                            </div>
+                        </div>
+                        
+                        <!-- Otomatik Değerler (Sabit Seri / Fiyat) -->
+                        <div class="form-group" id="manual-series-wrapper" style="margin-top: 15px;">
+                            <div class="auto-values-grid">
+                                <div class="auto-input-box">
+                                    <label for="manual-series-count">Eklenecek Adet (Seri)</label>
+                                    <input type="number" id="manual-series-count" value="1" min="1" style="font-size: 1.2rem; padding: 10px;">
+                                </div>
+                                <div class="auto-input-box">
+                                    <label for="manual-override-price">Manuel Fiyat (Opsiyonel)</label>
+                                    <input type="number" id="manual-override-price" step="0.01" min="0" placeholder="Orjinal">
+                                </div>
+                            </div>
+                        </div>
+
+                        <!-- Tekli Satış Beden Alanı (Gizli) -->
+                        <div class="form-group hidden" id="single-sale-group" style="margin-top: 15px;">
+                            <label class="setting-label">Beden Adetleri</label>
+                            <div id="single-sale-sizes-container" class="sizes-grid-input">
+                                <!-- JS Dolduracak -->
+                            </div>
+                            <p id="unit-price-display" class="price-info"></p>
+                        </div>
+                    </form>
+                </div>
+            </div>
+
+            <!-- ALT BÖLÜM: YATAY SEPET + ÖDEME -->
+            <div class="pos-bottom-section">
+                
+                <!-- SOL: Yatay Sepet Tablosu -->
+                <div class="cart-table-wrapper">
+                    <table class="cart-table-modern">
+                        <thead>
+                            <tr>
+                                <th style="width: 40%;">Ürün Bilgisi</th>
+                                <th style="width: 15%;">Stok Durumu</th>
+                                <th style="width: 15%; text-align: center;">Miktar</th>
+                                <th style="width: 15%; text-align: center;">Birim Fiyat</th>
+                                <th style="width: 10%; text-align: right;">Toplam</th>
+                                <th style="width: 5%;"></th>
+                            </tr>
+                        </thead>
+                        <tbody id="shopping-cart-container">
+                            <!-- JS Dolduracak -->
+                        </tbody>
+                    </table>
+                    <div id="cart-empty-msg" style="display:none; text-align: center; padding: 40px; color: #9CA3AF;">
+                        <i class="ri-shopping-cart-line" style="font-size: 2rem;"></i>
+                        <p>Sepetiniz boş.</p>
+                    </div>
+                </div>
+
+                <!-- SAĞ: Ödeme Paneli (Checkout) -->
+                <div class="checkout-panel">
+                    <div class="checkout-header">
+                        <h3 style="margin:0;"><i class="ri-calculator-line"></i> Özet</h3>
+                    </div>
+
+                    <!-- Toplam Gösterimi -->
+                    <div class="total-display" style="margin-bottom: 20px;">
+                        <span>Genel Toplam</span>
+                        <strong id="cart-total-value" style="font-size: 1.8rem;">0.00 TL</strong>
+                    </div>
+
+                    <!-- İndirim / KDV -->
+                    <div class="price-adjustments-modern" style="flex-direction: column; gap: 10px;">
+                        <div class="adj-row" style="width: 100%;">
+                            <div class="adj-check"><input type="checkbox" id="toggle-discount"><label for="toggle-discount">İndirim</label></div>
+                            <div id="discount-input-wrapper" class="hidden adj-input"><input type="number" id="global-discount-input" step="0.01" min="0" placeholder="Tutar"></div>
+                        </div>
+                        <div class="adj-row" style="width: 100%;">
+                            <div class="adj-check"><input type="checkbox" id="toggle-vat"><label for="toggle-vat">KDV (%)</label></div>
+                            <div id="vat-input-wrapper" class="hidden adj-input"><input type="number" id="vat-percentage-input" step="1" value="10" placeholder="%"></div>
+                        </div>
+                    </div>
+
+                    <!-- Özet Bilgiler (Küçük) -->
+                    <div id="calculation-summary" style="margin: 15px 0; font-size: 0.85rem; color: #6B7280; display: none;">
+                        <div style="display:flex; justify-content:space-between;"><span>Ara Toplam:</span> <span id="summary-subtotal"></span></div>
+                        <div id="row-summary-discount" style="display:none; justify-content:space-between; color:#EF4444;"><span>İndirim:</span> <span id="summary-discount"></span></div>
+                        <div id="row-summary-vat" style="display:none; justify-content:space-between; color:#10B981;"><span>KDV:</span> <span id="summary-vat"></span></div>
+                    </div>
+
+                    <hr style="border: 0; border-top: 1px solid #eee; margin: 15px 0;">
+
+                    <!-- Form -->
+                    <form id="form-sepet-satis" class="checkout-form">
+                        <div class="customer-select-wrapper" style="margin-bottom: 10px;">
+                            <i class="ri-user-line"></i>
+                            <select id="customers" name="customers" required style="width: 100%;">
+                                <option value="" disabled selected>Müşteri Seçin</option>
+                            </select>
+                        </div>
+                        <p id="selected-customer-debt" class="debt-info" style="margin-bottom: 10px;"></p>
+
+                        <label class="debt-option" style="margin-bottom: 10px;">
+                            <input type="checkbox" id="add-as-debt-checkbox" name="is_debt">
+                            <span>Veresiye Ekle</span>
+                        </label>
+
+                        <div class="form-group hidden" id="payment-container" style="margin-bottom: 10px;">
+                            <input id="amount-paid" class="payment-input" name="amount_paid" type="number" step="0.01" min="0" placeholder="Nakit Alınan Tutar" style="width: 100%;">
+                            <p id="debt-calculation-display" class="calc-info"></p>
+                        </div>
+
+                        <textarea id="satis-not" name="notes" placeholder="Sipariş Notu..." rows="2" class="note-input" style="width: 100%; border: 1px solid #eee; padding: 8px;"></textarea>
+
+                        <button type="button" id="btn-create-order" class="checkout-btn" style="margin-top: 20px;">
+                            Satışı Tamamla <i class="ri-arrow-right-line"></i>
+                        </button>
+                    </form>
+                </div>
+
+            </div>
+        </div>
+    </section>
+
+      <!-- Stok Tablosu Paneli -->
+
+      <section id="mevcut-stoklar" class="tab-panel">
+          
+          <div class="zen-wrapper">
+              
+              <!-- HEADER & FİLTRELER -->
+              <div class="zen-header">
+                  <div class="zen-title">
+                      <h2>Envanter</h2>
+                      <span class="zen-subtitle">Depo Durumu</span>
+                  </div>
+
+                  <div class="zen-controls">
+
+                        <button id="btn-open-excel-modal" class="btn-secondary" style="padding: 10px 15px; display:flex; align-items:center; gap:5px;">
+                            <i class="ri-file-excel-2-line" style="color: #10B981; font-size: 1.1rem;"></i>
+                            <span>Excel Yükle</span>
+                        </button>
+                        <!-- Excel İndir Butonu -->
+                        <a href="/export_products" class="btn-secondary" style="padding: 10px 15px; display:flex; align-items:center; gap:5px; text-decoration:none; color:inherit;">
+                            <i class="ri-download-cloud-line" style="color: #3B82F6; font-size: 1.1rem;"></i>
+                            <span>Excel İndir</span>
+                        </a>
+                      <!-- Arama -->
+                      <div class="zen-search">
+                          <i class="ri-search-2-line"></i>
+                          <input type="text" id="search-input" placeholder="Ürün ara...">
+                      </div>
+                      <div class="zen-select-wrapper" style="min-width: 140px;">
+                            <select id="filter-attr-select" class="clean-select" style="padding-left: 15px;">
+                                <option value="">Özellik Seç</option>
+                                <!-- JS burayı dolduracak -->
+                            </select>
+                            <i class="ri-filter-3-line"></i>
+                        </div>
+
+                        <!-- Nitelik Değer Girişi (Başlangıçta gizli) -->
+                        <div class="zen-search" id="filter-attr-input-wrapper" style="display: none; width: 160px;">
+                            <input type="text" id="filter-attr-value" placeholder="Değer..." style="padding-left: 15px;">
+                        </div>
+
+                      <!-- Sıralama -->
+                      <div class="zen-select-wrapper">
+                          <select id="sort-select">
+                              <option value="default">Sıralama</option>
+                              <option value="name-asc">A-Z</option>
+                              <option value="name-desc">Z-A</option>
+                              <option value="stock-desc">Stok Azalan</option>
+                              <option value="stock-asc">Stok Artan</option>
+                          </select>
+                          <i class="ri-arrow-down-s-line"></i>
+                      </div>
+                  </div>
+              </div>
+
+              <!-- TABLO (JS Bağlantısı için 'stok-table' sınıfı eklendi) -->
+              <div class="zen-table-container">
+                  <table class="zen-table stok-table"> 
+                        <thead>
+                            <tr>
+                                <th style="width: 35%; padding-left: 24px;">ÜRÜN DETAYI</th>
+                                <th style="width: 25%;">KATEGORİ & RAFLAR</th>
+                                <th style="width: 15%;">RENK</th>
+                                <th style="width: 15%;">STOK</th>
+                                <th style="width: 10%; text-align: right; padding-right: 24px;">İŞLEM</th>
+                            </tr>
+                        </thead>
+                      <tbody class="stok-table tbody">
+                          <!-- JS Burayı Dolduracak -->
+                      </tbody>
+                  </table>
+              </div>
+
+          </div>
+      </section>
+      <section id="gider-ekle" class="tab-panel">
+  <div class="expense-dashboard">
+    
+    <!-- Sol: Gider Ekleme Kartı -->
+    <div class="expense-card create-expense">
+        <div class="card-header-minimal">
+            <div class="icon-box expense-icon">
+                <i class="ri-wallet-3-line"></i>
+            </div>
+            <div>
+                <h3>Yeni Gider</h3>
+                <span class="text-muted">Harcama kaydı oluştur</span>
+            </div>
+        </div>
+
+        <form id="form-gider-ekle" class="expense-form">
+                    <div class="minimal-input-group">
+                        <label>Tutar</label>
+                        <div class="amount-wrapper">
+                            <input type="number" id="expenditure-amount" step="0.01" min="0" placeholder="0.00" required>
+                            <select id="expenditure-currency" class="currency-select-minimal" required>
+                                <option value="TL">₺</option>
+                                <option value="USD">$</option>
+                                <option value="EURO">€</option>
+                            </select>
+                        </div>
+                    </div>
+
+                    <div class="minimal-input-group">
+                        <label>Açıklama</label>
+                        <textarea id="expenditure-desc" rows="2" placeholder="Örn: Kira ödemesi, Mutfak masrafı..." required></textarea>
+                    </div>
+
+                    <button type="submit" class="btn-expense-save">
+                        Kaydet <i class="ri-check-line"></i>
+                    </button>
+                </form>
+            </div>
+
+            <!-- Sağ: Son İşlemler Listesi -->
+            <div class="expense-card history-expense">
+                <div class="card-header-minimal">
+                    <h3>Son Harcamalar</h3>
+                    <button class="btn-icon-only"><i class="ri-more-2-fill"></i></button>
+                </div>
+                
+                <div class="transaction-list-wrapper">
+                    <!-- Table yerine modern liste yapısı -->
+                    <table class="minimal-table">
+                        <thead>
+                            <tr>
+                                <th>Tarih</th>
+                                <th>Açıklama</th>
+                                <th class="text-right">Tutar</th>
+                            </tr>
+                        </thead>
+                        <tbody id="expenditure-list-body">
+                            <!-- JS Dolduracak -->
+                        </tbody>
+                    </table>
+                </div>
+            </div>
+
+        </div>
+        </section>
+        <section id="gelen-siparisler" class="tab-panel">
+            <div class="card">
+                <!-- FİLTRE ALANI -->
+                <div class="orders-filter-bar" style="display: flex; gap: 15px; margin-bottom: 20px; flex-wrap: wrap; align-items: flex-end; padding-bottom: 20px; border-bottom: 1px solid #eee;">
+                    
+                    <!-- Durum Filtresi -->
+                    <div style="flex: 1; min-width: 150px;">
+                        <label style="font-size: 0.8rem; font-weight: 600; color: #6B7280; display: block; margin-bottom: 5px;">Durum</label>
+                        <div class="select-wrapper">
+                            <select id="filter-order-status" class="clean-select">
+                                <option value="ALL" selected>Tümü</option>
+                                <option value="PENDING">Bekleyenler</option>
+                                <option value="APPROVED">Onaylananlar</option>
+                                <option value="REJECTED">Reddedilenler</option>
+                            </select>
+                            <i class="ri-arrow-down-s-line"></i>
+                        </div>
+                    </div>
+
+                    <!-- Müşteri Filtresi -->
+                    <div style="flex: 1; min-width: 200px;">
+                        <label style="font-size: 0.8rem; font-weight: 600; color: #6B7280; display: block; margin-bottom: 5px;">Müşteri</label>
+                        <div class="select-wrapper">
+                            <select id="filter-order-customer" class="clean-select">
+                                <option value="ALL" selected>Tüm Müşteriler</option>
+                                <!-- JS ile doldurulacak -->
+                            </select>
+                            <i class="ri-arrow-down-s-line"></i>
+                        </div>
+                    </div>
+
+                    <!-- Tarih Filtresi -->
+                    <div style="flex: 1; min-width: 150px;">
+                        <label style="font-size: 0.8rem; font-weight: 600; color: #6B7280; display: block; margin-bottom: 5px;">Zaman Aralığı</label>
+                        <div class="select-wrapper">
+                            <select id="filter-order-date" class="clean-select">
+                                <option value="ALL" selected>Tüm Zamanlar</option>
+                                <option value="TODAY">Bugün</option>
+                                <option value="THIS_WEEK">Bu Hafta</option>
+                                <option value="THIS_MONTH">Bu Ay</option>
+                            </select>
+                            <i class="ri-arrow-down-s-line"></i>
+                        </div>
+                    </div>
+
+                    <!-- Yenile Butonu -->
+                    <div>
+                        <button id="btn-refresh-orders" class="btn-secondary" style="height: 45px; width: 45px; display: flex; align-items: center; justify-content: center;">
+                            <i class="ri-refresh-line" style="font-size: 1.2rem;"></i>
+                        </button>
+                    </div>
+                </div>
+
+                <!-- BİRLEŞTİRİLMİŞ TABLO -->
+                <div class="stok-table-wrap">
+                    <table class="stok-table">
+                        <thead>
+                            <tr>
+                                <th style="width: 100px;">Durum</th>
+                                <th>Sipariş No</th>
+                                <th>Oluşturan</th>
+                                <th>Müşteri</th>
+                                <th>Tutar</th>
+                                <th>Tarih</th>
+                                <th>Not</th>
+                                <th style="text-align: right;">İşlemler</th>
+                            </tr>
+                        </thead>
+                        <tbody id="unified-orders-body">
+                            <!-- JS ile doldurulacak -->
+                        </tbody>
+                    </table>
+                </div>
+
+                <!-- SAYFALAMA -->
+                <div id="orders-pagination" style="display: flex; justify-content: center; align-items: center; gap: 15px; margin-top: 20px;">
+                    <button id="btn-prev-page" class="btn-secondary" disabled><i class="ri-arrow-left-line"></i> Önceki</button>
+                    <span id="page-info" style="font-weight: 600; color: #4B5563;">Sayfa 1 / 1</span>
+                    <button id="btn-next-page" class="btn-secondary" disabled>Sonraki <i class="ri-arrow-right-line"></i></button>
+                </div>
+            </div>
+        </section>
+      </div>
+      <!-- storage.html içinde #depoya-yerlestir sekmesi -->
+        <section id="depoya-yerlestir" class="tab-panel">
+            <div class="product-create-wrapper" style="max-width: 700px; margin: 0 auto;">
+                
+                <div class="modern-card-inner">
+                    <h3 style="margin-bottom: 20px; text-align: center; color: #1F2937;">
+                        <i class="ri-archive-line"></i> Rafa Ürün & Beden Ekle
+                    </h3>
+
+                    <form id="form-raf-ekle">
+                        
+                        <!-- 1. ÜRÜN SEÇİMİ -->
+                        <div class="modern-input-group">
+                            <label>1. Ürün Barkodu / Kodu</label>
+                            <div style="display: flex; gap: 10px;">
+                                <input type="text" id="raf-urun-kodu" class="clean-inp" placeholder="Ürün kodunu okutun..." required autocomplete="off">
+                                <div id="shelf-product-status" style="display:flex; align-items:center; justify-content:center; width: 40px;">
+                                    <!-- JS ile buraya tik veya çarpı gelecek -->
+                                </div>
+                            </div>
+                            <small id="shelf-product-name-display" style="color: #3B82F6; font-weight: 600; display: block; margin-top: 5px; min-height: 20px;"></small>
+                        </div>
+
+                        <!-- 2. RAF SEÇİMİ -->
+                        <div class="modern-input-group">
+                            <label>2. Hedef Raf Kodu</label>
+                            <div class="select-wrapper">
+                                <select id="raf-kodu-sec" class="clean-select" required>
+                                    <option value="">Raf Seçiniz</option>
+                                    <!-- JS Burayı dolduracak -->
+                                </select>
+                                <i class="ri-arrow-down-s-line"></i>
+                            </div>
+                        </div>
+
+                        <!-- 3. BEDEN DAĞILIMI (Otomatik Dolacak) -->
+                        <div class="modern-input-group">
+                            <label>3. Rafa Eklenecek Adetler</label>
+                            
+                            <!-- Dinamik Alan -->
+                            <div id="shelf-sizes-container" style="background: #F9FAFB; border: 1px solid #E5E7EB; padding: 15px; border-radius: 8px;">
+                                <p style="text-align:center; color:#9CA3AF; font-size:0.9rem;">
+                                    <i class="ri-arrow-up-line"></i> Önce ürün kodunu giriniz.
+                                </p>
+                            </div>
+                        </div>
+
+                        <!-- KAYDET -->
+                        <button type="submit" class="btn-save-modern" style="margin-top: 20px; width: 100%;">
+                            <i class="ri-save-3-line"></i> Rafa Yerleştir
+                        </button>
+
+                    </form>
+                </div>
+            </div>
+        </section>
+        <!-- Nitelik Yönetimi Paneli -->
+        <section id="nitelik-yonetimi" class="tab-panel active">
+            <div class="attr-container">
+                
+                <!-- Üst Başlık ve Bilgi -->
+                <div class="attr-header">
+                    <div class="header-text">
+                        <h2><i class="ri-settings-5-line"></i> Ürün Nitelik Yönetimi</h2>
+                        <p>Ürünlerinize ait varyasyonları (Kumaş, Beden, Materyal vb.) buradan yönetebilirsiniz.</p>
+                    </div>
+                </div>
+
+                <div class="attr-grid">
+                    <!-- SOL TARAF: Yeni Nitelik Ekleme -->
+                    <div class="attr-card side-form">
+                        <h3><i class="ri-add-box-line"></i> Yeni Tanımlama</h3>
+                        <form id="form-nitelik-ekle" class="modern-form">
+                            <div class="form-group">
+                                <label for="attr-name">Nitelik Adı</label>
+                                <input type="text" id="attr-name" placeholder="Örn: Kumaş Türü" required>
+                            </div>
+
+                            <div class="form-group options-box">
+                                <label>Seçenekler & Barkod Kodları</label>
+                                <div class="option-inputs">
+                                    <input type="text" id="new-opt-label" placeholder="Değer (Zorunlu)">
+                                    <input type="text" id="new-opt-code" placeholder="Kod (Zorunlu)" style="text-transform: uppercase;">
+                                    <button type="button" id="btn-add-new-opt" class="btn-icon-add" title="Önce değer ve kod giriniz">
+                                        <i class="ri-add-line"></i>
+                                    </button>
+                                </div>
+                                <!-- Eklenen Seçenekler Chip Alanı -->
+                                <div id="new-opt-container" class="chip-container">
+                                    <!-- Örnek Chip: <span class="chip">Pamuk [PMK] <i class="ri-close-line"></i></span> -->
+                                </div>
+                            </div>
+
+                            <button type="submit" class="btn-primary-full">
+                                <i class="ri-save-3-line"></i> Kaydet ve Yayınla
+                            </button>
+                        </form>
+                    </div>
+
+                    <!-- SAĞ TARAF: Mevcut Nitelikler Listesi -->
+                    <div class="attr-card main-list">
+                        <div class="list-header">
+                            <h3><i class="ri-list-check-2"></i> Tanımlı Nitelikler</h3>
+                            <div class="search-mini">
+                                <i class="ri-search-line"></i>
+                                <input type="text" placeholder="Niteliklerde ara...">
+                            </div>
+                        </div>
+                        
+                        <div class="table-responsive">
+                            <table class="modern-table">
+                                <thead>
+                                    <tr>
+                                        <th>Nitelik Adı</th>
+                                        <th>Tanımlı Seçenekler</th>
+                                        <th class="text-right">İşlemler</th>
+                                    </tr>
+                                </thead>
+                                <tbody id="attribute-list-body">
+                                    <!-- Örnek Satır -->
+                                    <tr>
+                                        <td>
+                                            <div class="attr-title">Kumaş Türü</div>
+                                        </td>
+                                        <td>
+                                            <div class="badge-group">
+                                                <span class="badge-outline">Pamuk <small>PMK</small></span>
+                                                <span class="badge-outline">Keten <small>KTN</small></span>
+                                            </div>
+                                        </td>
+                                        <td>
+                                            <div class="action-buttons">
+                                                <button class="btn-edit" title="Düzenle"><i class="ri-edit-2-line"></i></button>
+                                                <button class="btn-del" title="Sil"><i class="ri-delete-bin-7-line"></i></button>
+                                            </div>
+                                        </td>
+                                    </tr>
+                                </tbody>
+                            </table>
+                        </div>
+                    </div>
+                </div>
+            </div>
+        </section>
+        <!-- BARKOD KURALLARI PANELİ -->
+        <section id="barkod-kurallari" class="tab-panel">
+            <div class="product-create-wrapper" style="max-width: 800px; margin: 0 auto;">
+                
+                <div class="modern-card-inner" style="margin-bottom: 30px;">
+                    <h3 style="margin-bottom: 10px; color: #1F2937;">
+                        <i class="ri-barcode-box-line"></i> Barkod & SKU Şablonu Oluşturucu
+                    </h3>
+                    <p style="color:#6B7280; font-size:0.9rem; margin-bottom:20px;">
+                        Yeni bir ürün eklerken sistemin otomatik oluşturacağı ürün kodunun sırasını ve içeriğini buradan belirleyebilirsiniz. 
+                    </p>
+
+                    <!-- Kural Ekleme Alanı -->
+                    <div style="background: #F9FAFB; padding: 15px; border-radius: 8px; border: 1px dashed #D1D5DB; margin-bottom: 20px;">
+                        <label style="font-weight:600; font-size:0.85rem; color:#4B5563; display:block; margin-bottom:10px;">Yeni Parça Ekle (Soldan Sağa)</label>
+                        <div style="display: flex; gap: 10px; align-items: center;">
+                            <div class="select-wrapper" style="flex:1;">
+                                <select id="rule-type-select" class="clean-select">
+                                    <option value="random">Rastgele Sayı (Benzersizlik İçin Şart)</option>
+                                    <option value="category">Kategori Kodu</option>
+                                    <option value="color">Renk Kodu</option>
+                                    <option value="static">Sabit Yazı / Sayı</option>
+                                    <!-- Dinamik özel nitelikler JS ile buraya eklenecek -->
+                                </select>
+                                <i class="ri-arrow-down-s-line"></i>
+                            </div>
+                            
+                            <input type="text" id="rule-static-input" class="clean-inp" placeholder="Sabit değer girin..." style="display:none; width: 150px; text-transform: uppercase;">
+
+                            <label style="display:flex; align-items:center; gap:5px; font-size:0.85rem; font-weight:600; cursor:pointer; background:#fff; padding:10px; border:1px solid #E5E7EB; border-radius:6px;">
+                                <input type="checkbox" id="rule-is-group" checked>
+                                Bu Kısım Ortak (Varyasyon Grubu)
+                            </label>
+
+                            <button type="button" class="btn-primary" id="btn-add-rule" style="padding: 10px 15px;">Ekle</button>
+                        </div>
+                    </div>
+
+                    <!-- Mevcut Şablon Önizleme / Sıralama -->
+                    <h4 style="font-size:1rem; margin-bottom:10px; color:#374151;">Mevcut Formatınız</h4>
+                    <div id="barcode-rules-container" style="display: flex; gap: 10px; flex-wrap: wrap; align-items: center; min-height: 50px; padding: 15px; background: #EFF6FF; border: 1px solid #BFDBFE; border-radius: 8px;">
+                        <span style="color:#9CA3AF; font-size:0.85rem; font-style:italic;">Henüz kural eklenmedi. Eski standart kullanılacak.</span>
+                    </div>
+
+                    <button type="button" id="btn-save-rules" class="btn-save-modern" style="margin-top: 20px; width: 100%;">
+                        <i class="ri-save-3-line"></i> Şablonu Kaydet
+                    </button>
+                </div>
+            </div>
+            <!-- TEHLİKELİ ALAN: TOPLU GÜNCELLEME -->
+            <div style="margin-top: 40px; padding: 20px; border: 1px solid #FECACA; background-color: #FEF2F2; border-radius: 8px;">
+                <h4 style="color: #991B1B; margin-top: 0; display:flex; align-items:center; gap:8px;">
+                    <i class="ri-error-warning-fill" style="font-size:1.2rem;"></i> Toplu Kod Güncelleme
+                </h4>
+                <p style="color: #B91C1C; font-size: 0.9rem; margin-bottom: 15px;">
+                    Barkod şablonunuzu değiştirdikten sonra sistemdeki <b>mevcut tüm ürünlerin</b> yeni şablona göre kodlanmasını istiyorsanız aşağıdaki butona basın. <br>
+                    <i>Not: Eski satış ve sipariş geçmişinizdeki kodlar da eşzamanlı olarak güncellenir, veri kaybı yaşanmaz.</i>
+                </p>
+                <button type="button" id="btn-regenerate-all" class="btn-primary" style="background-color: #DC2626; border-color: #DC2626; width:100%;">
+                    <i class="ri-refresh-line"></i> Mevcut Tüm Ürünlerin Kodlarını Yenile
+                </button>
+            </div>
+        </section>
+        <!-- NİTELİK DÜZENLEME MODALI -->
+        <div id="edit-attribute-modal" class="modal-overlay" style="display: none;">
+            <div class="modal-content" style="max-width: 500px;">
+                <div class="modal-header" style="display:flex; justify-content:space-between; margin-bottom:20px;">
+                    <h2 class="modal-title">Niteliği Düzenle</h2>
+                    <button class="btn-icon delete" onclick="document.getElementById('edit-attribute-modal').style.display='none'">
+                        <i class="ri-close-line"></i>
+                    </button>
+                </div>
+
+                <form id="form-nitelik-duzenle">
+                    <input type="hidden" id="edit-attr-id">
+                    
+                    <div class="modern-input-group" style="margin-bottom: 15px;">
+                        <label>Nitelik Adı</label>
+                        <input type="text" id="edit-attr-name" class="clean-inp" required>
+                    </div>
+                    
+                    <div class="modern-input-group" style="margin-bottom: 20px;">
+                        <label>Seçenek & Barkod Kodu</label>
+                        <div style="display: flex; gap: 8px;">
+                            <input type="text" id="edit-opt-label" class="clean-inp" placeholder="Değer (Örn: Pamuk)">
+                            <input type="text" id="edit-opt-code" class="clean-inp" placeholder="Kod (Örn: PMK)" style="width: 120px; text-transform: uppercase;">
+                            <button type="button" id="btn-add-edit-opt" class="btn-secondary">Ekle</button>
+                        </div>
+                        <!-- Düzenlenen Seçeneklerin Görüneceği Alan -->
+                        <div id="edit-opt-container" style="display: flex; flex-wrap: wrap; gap: 8px; margin-top: 10px;"></div>
+                    </div>
+
+                    <div class="modal-actions">
+                        <button type="button" class="btn-secondary" onclick="document.getElementById('edit-attribute-modal').style.display='none'">İptal</button>
+                        <button type="submit" class="btn-primary">Değişiklikleri Kaydet</button>
+                    </div>
+                </form>
+            </div>
+        </div>
+    </section>
+
+    </div><!-- .tabs-content sonu -->
+  </main>
+  
+  <div id="toast" role="status" aria-live="polite"></div>
+
+  <div id="order-detail-modal" class="modal-overlay" style="display: none;">
+    <div class="modal-content" style="max-width: 800px;">
+      <div style="display:flex; justify-content:space-between; align-items:center; margin-bottom:15px; border-bottom:1px solid #eee; padding-bottom:10px;">
+          <h2 class="modal-title" style="margin:0;">Sipariş Detayı</h2>
+          <button type="button" onclick="document.getElementById('order-detail-modal').style.display='none'" style="background:none; border:none; font-size:1.5rem; cursor:pointer;">&times;</button>
+      </div>
+      
+      <div id="order-detail-content">
+          <!-- JS ile doldurulacak -->
+      </div>
+
+      <div class="modal-actions">
+        <button type="button" class="btn-secondary" onclick="document.getElementById('order-detail-modal').style.display='none'">Kapat</button>
+      </div>
+    </div>
+  </div>
+<!-- EXCEL İÇE AKTARMA MODALI (GÜNCELLENMİŞ) -->
+<div id="excel-import-modal" class="modal-overlay" style="display: none;">
+    <div class="modal-content" style="max-width: 700px;">
+        <div class="modal-header" style="display:flex; justify-content:space-between; margin-bottom:20px;">
+            <h2 class="modal-title">Excel ile Ürün Yükle</h2>
+            <!-- ID eklendi, onclick kaldırıldı -->
+            <button class="btn-icon delete" id="btn-close-excel-x"><i class="ri-close-line"></i></button>
+        </div>
+
+        <!-- ADIM 1: Dosya Seçimi -->
+        <div id="excel-step-1">
+            <div class="image-upload-zone" style="height: 150px; border: 2px dashed #ccc; display: flex; flex-direction: column; align-items: center; justify-content: center; cursor: pointer;" onclick="document.getElementById('excel-file-input').click()">
+                <input type="file" id="excel-file-input" accept=".xlsx, .xls" class="hidden-file-input" style="display:none;">
+                <div class="upload-label" style="text-align: center;">
+                    <i class="ri-file-excel-2-line" style="font-size: 3rem; color: #10B981;"></i>
+                    <p style="margin: 10px 0 0 0; color: #6B7280;">Excel dosyasını seçmek için tıklayın</p>
+                </div>
+            </div>
+            
+            <!--Dosya Bilgisi ve Progress Bar Alanı -->
+            <div id="file-info-wrapper" style="display: none; margin-top: 15px; background: #F9FAFB; padding: 15px; border-radius: 8px; border: 1px solid #E5E7EB;">
+                <div style="display: flex; align-items: center; gap: 15px;">
+                    <i class="ri-file-text-line" style="font-size: 2rem; color: #3B82F6;"></i>
+                    <div style="flex: 1;">
+                        <p id="selected-file-name" style="margin: 0; font-weight: 600; color: #1F2937; font-size: 0.95rem;">Dosya Adı</p>
+                        <p id="selected-file-size" style="margin: 2px 0 0 0; font-size: 0.8rem; color: #6B7280;">0 KB</p>
+                    </div>
+                </div>
+                
+            
+                <div id="upload-progress-container" style="margin-top: 10px; display: none;">
+                    <div style="display: flex; justify-content: space-between; font-size: 0.8rem; margin-bottom: 5px; color: #4B5563;">
+                        <span>Yükleniyor...</span>
+                        <span id="upload-percent-text">0%</span>
+                    </div>
+                    <div style="width: 100%; height: 6px; background: #E5E7EB; border-radius: 3px; overflow: hidden;">
+                        <div id="upload-progress-bar" style="width: 0%; height: 100%; background: #3B82F6; transition: width 0.2s;"></div>
+                    </div>
+                </div>
+            </div>
+           
+
+            <div style="margin-top: 10px; text-align: right;">
+                <a href="/download_sample_excel" style="color: #3B82F6; font-size: 0.9rem; text-decoration: none;">
+                    <i class="ri-download-cloud-2-line"></i> Örnek Şablon İndir
+                </a>
+            </div>
+        </div>
+        
+        <!-- ADIM 2: Sütun Eşleştirme -->
+        <div id="excel-step-2" style="display: none;">
+            <p style="color: #6B7280; font-size: 0.9rem; margin-bottom: 15px;">
+                Excel sütunlarınızı sistem alanlarıyla eşleştirin.
+            </p>
+            <div class="mapping-grid" style="display: grid; grid-template-columns: 1fr 1fr; gap: 10px; max-height: 400px; overflow-y: auto;">
+                <!-- JS Burayı Dolduracak -->
+            </div>
+        </div>
+
+        <!-- ADIM 2.5: Değer Düzeltme (Value Mapping) -->
+        <div id="excel-step-mapping" style="display: none;">
+            <p style="color: #6B7280; font-size: 0.9rem; margin-bottom: 15px;">
+                Excel'deki bazı değerler sistemle eşleşmedi. Lütfen manuel eşleştirin.
+            </p>
+            
+            <div id="value-mapping-container" style="max-height: 400px; overflow-y: auto;">
+                <!-- JS ile buraya tablolar dolacak -->
+            </div>
+        </div>
+
+        <!-- ADIM 3: Sonuç -->
+        <div id="excel-step-3" style="display: none; text-align: center; padding: 30px;">
+            <i class="ri-loader-4-line ri-spin" style="font-size: 3rem; color: #3B82F6;" id="import-loading-icon"></i>
+            <i class="ri-checkbox-circle-line" style="font-size: 3rem; color: #10B981; display:none;" id="import-success-icon"></i>
+            <h3 id="import-status-text">İşleniyor...</h3>
+            <p id="import-result-detail" style="color:#6B7280;"></p>
+        </div>
+
+        <div class="modal-actions" style="margin-top: 20px;">
+            <!-- ID eklendi, onclick kaldırıldı -->
+            <button class="btn-secondary" id="btn-cancel-excel">İptal</button>
+            <button id="btn-excel-next" class="btn-primary" disabled>Devam Et</button>
+        </div>
+    </div>
+</div>
+  <!-- JavaScript Dosyaları -->
+  <script src="https://cdn.jsdelivr.net/npm/chart.js"></script>
+  <script src="/static/js/html5-qrcode.min.js"></script>
+  <script>
+    document.addEventListener("DOMContentLoaded", () => {
+      const totalSizesEl = document.getElementById("total-sizes");
+      const totalProductsEl = document.getElementById("total-products");
+      const sizesContainer = document.getElementById("sizes-container");
+
+      function calculateTotals() {
+        let totalInSeri = 0;
+        const numberInputs = sizesContainer.querySelectorAll(".size-input-number");
+        numberInputs.forEach(input => {
+          const val = parseInt(input.value, 10);
+          if (!isNaN(val)) totalInSeri += val;
+        });
+
+        let totalInStock = 0;
+        const stockInputs = sizesContainer.querySelectorAll(".size-input-stock");
+        stockInputs.forEach(input => {
+            const val = parseInt(input.value, 10);
+            if (!isNaN(val)) totalInStock += val;
+        });
+
+        totalSizesEl.textContent = totalInSeri;
+        totalProductsEl.textContent = totalInStock;
+      }
+
+      sizesContainer.addEventListener("input", e => {
+        if (e.target.classList.contains("size-input-number") || e.target.classList.contains("size-input-stock")) {
+          calculateTotals();
+        }
+      });
+      new MutationObserver(calculateTotals).observe(sizesContainer, {
+          childList: true,
+          subtree: true
+      });
+      calculateTotals();
+    });
+  </script>
+  <script src="/static/js/storage.js"></script>
+
+    <!-- SİPARİŞ TOPLAMA MODALI -->
+    <div id="picking-modal" class="modal-overlay" style="display: none;">
+        <div class="modal-content" style="max-width: 900px; height: 90vh; display: flex; flex-direction: column;">
+            
+            <!-- Header -->
+            <div class="modal-header" style="flex-shrink: 0; border-bottom: 1px solid #eee; padding-bottom: 15px;">
+                <div style="display: flex; align-items: center; justify-content: space-between;">
+                    <div style="display:flex; align-items:center; gap:10px;">
+                        <div style="background: #EFF6FF; padding: 10px; border-radius: 8px; color: #3B82F6;">
+                            <i class="ri-barcode-box-line" style="font-size: 1.5rem;"></i>
+                        </div>
+                        <div>
+                            <h3 style="margin: 0;">Sipariş Toplama & Doğrulama</h3>
+                            <p style="margin: 0; font-size: 0.85rem; color: #6B7280;">Sırasıyla Raf ve Ürün barkodlarını okutun.</p>
+                        </div>
+                    </div>
+                    <button class="btn-icon delete" onclick="document.getElementById('picking-modal').style.display='none'">
+                        <i class="ri-close-line"></i>
+                    </button>
+                </div>
+
+                <!-- YENİ EKLENEN TARAMA ALANI -->
+                <div class="scanning-dashboard" style="display: grid; grid-template-columns: 1fr 1fr 2fr; gap: 10px; margin-top: 20px; background: #F3F4F6; padding: 10px; border-radius: 8px;">
+                    
+                    <!-- 1. Raf Input -->
+                    <div class="scan-group">
+                        <label style="font-size: 0.75rem; font-weight: 700; color: #4B5563;">1. RAF OKUT</label>
+                        <input type="text" id="picker-shelf-input" class="scan-inp" placeholder="Raf Kodu..." autocomplete="off">
+                    </div>
+
+                    <!-- 2. Ürün Input -->
+                    <div class="scan-group">
+                        <label style="font-size: 0.75rem; font-weight: 700; color: #4B5563;">2. ÜRÜN OKUT</label>
+                        <input type="text" id="picker-product-input" class="scan-inp" placeholder="Ürün Barkodu..." autocomplete="off" disabled>
+                    </div>
+
+                    <!-- 3. Durum Mesajı -->
+                    <div class="scan-status" id="scan-status-msg" style="display: flex; align-items: center; padding-left: 10px; font-weight: 600; color: #6B7280;">
+                        <i class="ri-information-line" style="margin-right: 5px;"></i> Başlamak için raf barkodunu okutun.
+                    </div>
+                </div>
+            </div>
+
+            <!-- Body (Liste) -->
+            <div class="modal-body" style="flex-grow: 1; overflow-y: auto; padding: 0;">
+                <table class="stok-table" style="border: none;">
+                    <thead style="position: sticky; top: 0; z-index: 10; background: #fff;">
+                        <tr>
+                            <th>DURUM</th>
+                            <th>HEDEF RAF</th>
+                            <th>ÜRÜN</th>
+                            <th>RENK</th>
+                            <th style="text-align: center;">BEDEN</th>
+                            <th style="text-align: center;">MİKTAR</th>
+                        </tr>
+                    </thead>
+                    <!-- SİLİNEN KISIM BURASIYDI, GERİ EKLEDİK -->
+                    <tbody id="picking-list-body">
+                        <!-- JS Dolduracak -->
+                    </tbody>
+                </table>
+            </div>
+
+            <!-- Footer -->
+            <div class="modal-footer" style="flex-shrink: 0; display: flex; justify-content: space-between; align-items: center; border-top: 1px solid #eee; padding-top: 15px;">
+                <div id="picking-progress-text" style="font-weight: 600; color: #374151;">
+                    0 / 0 Ürün Toplandı
+                </div>
+                <div style="display: flex; gap: 10px;">
+                    <button class="btn-secondary" onclick="window.print()">
+                        <i class="ri-printer-line"></i> Yazdır
+                    </button>
+                    <!-- Disabled olarak başlıyor -->
+                    <button id="btn-confirm-picking" class="btn-primary" disabled style="opacity: 0.5; cursor: not-allowed;">
+                        <i class="ri-check-double-line"></i> Siparişi Tamamla
+                    </button>
+                </div>
+            </div>
+        </div>
+    </div>
+    {% include "ai_chat.html" %}
+    <script src="/static/js/ai_chat.js"></script>
+</body>
+</html>

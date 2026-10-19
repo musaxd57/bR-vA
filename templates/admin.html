@@ -1,0 +1,204 @@
+<!DOCTYPE html>
+<html lang="tr">
+<head>
+  <meta charset="UTF-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1.0">
+  <title>envaner | Yönetim Paneli</title>
+  <link rel="preconnect" href="https://fonts.googleapis.com">
+  <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+  <link href="https://fonts.googleapis.com/css2?family=Inter:wght@400;500;600;700&display=swap" rel="stylesheet">
+  <link href="https://cdn.jsdelivr.net/npm/remixicon@4.2.0/fonts/remixicon.css" rel="stylesheet">
+  <link rel="stylesheet" href="{{ url_for('static', filename='admin.css') }}">
+</head>
+<body>
+
+  <div class="background-shapes"></div>
+
+  <div class="dashboard-container">
+    
+    <!-- SOL SÜTUN -->
+    <aside class="sidebar">
+      <header class="sidebar-header">
+        <div class="logo-box"><i class="ri-shield-star-line"></i></div>
+        <h1>Yönetim Paneli</h1>
+      </header>
+
+      <div class="form-wrapper">
+        <!-- Müdür Ekleme Kartı -->
+        <div class="card glass-card">
+          <form class="yeni-mudur-formu">
+            <h2 class="form-title"><i class="ri-user-add-line"></i><span>Müdür Ekle</span></h2>
+            <div class="input-group">
+                <div class="input-wrapper">
+                    <i class="ri-user-line"></i>
+                    <input type="text" placeholder="İsim" required maxlength="20" id="mudurIsim">
+                </div>
+                <div class="input-wrapper password-wrapper">
+                    <i class="ri-lock-password-line"></i>
+                    <input type="password" placeholder="Şifre" required maxlength="20" id="mudurSifre">
+                    <button type="button" id="togglePassword" class="toggle-btn"><i class="ri-eye-line"></i></button>
+                </div>
+            </div>
+            <div class="input-wrapper">
+              <i class="ri-store-2-line"></i>
+              <input type="text" placeholder="Bağlı Olacağı Bayi" maxlength="30" id="mudurBayi">
+            </div>
+            <div class="input-wrapper">
+              <i class="ri-phone-fill"></i>
+              <input type="text" id="mudurphone" placeholder="Telefon Numarası">
+            </div>
+            <button type="submit" class="submit-btn">Müdür Oluştur</button>  
+          </form>
+        </div>
+
+        <!-- İstatistikler -->
+        <div class="card glass-card">
+          <h2 class="form-title"><i class="ri-bar-chart-fill"></i><span>İstatistikler</span></h2>
+          <div class="stats-grid">
+             <div class="stat-box">
+                <span class="stat-val" id="statMudurs">0</span>
+                <span class="stat-label">Müdür</span>
+             </div>
+             <div class="stat-box">
+                <span class="stat-val" id="statBayis">0</span>
+                <span class="stat-label">Bayi</span>
+             </div>
+             <div class="stat-box">
+                <span class="stat-val" id="statUsers">0</span>
+                <span class="stat-label">Aktif</span>
+             </div>
+          </div>
+        </div>
+      </div>
+    </aside>
+
+    <!-- SAĞ SÜTUN -->
+    <main class="main-content">
+      <header class="main-header">
+        <div class="input-wrapper" style="max-width: 400px; margin:0;">
+            <i class="ri-search-line"></i>
+            <input type="text" placeholder="Kullanıcı ara..." id="filterIsim">
+        </div>
+        <div style="display: flex; gap: 10px;">
+            <button id="btnOpenNotifyModal" class="action-btn notify-btn" style="display: none;">
+                <i class="ri-send-plane-fill"></i> <span id="selectedCount">0</span> Kişiye Bildirim
+            </button>
+            <div id="LogOut" class="logout-btn" onclick="logOut()">
+                <i class="ri-logout-box-r-line"></i><span>Çıkış</span>
+            </div>
+        </div>
+      </header>
+
+      <div class="card glass-card liste-card">
+        <div class="table-wrap">
+          <table>
+            <thead>
+              <tr>
+                <th style="width: 50px; text-align: center;">
+                    <input type="checkbox" id="selectAllUsers" class="custom-checkbox">
+                </th>
+                <th>İsim</th>
+                <th>Rol</th>
+                <th>Bayi</th>
+                <th>Telefon</th>
+                <th style="text-align: right;">İşlem</th>
+              </tr>
+            </thead>
+            <tbody class="ebody">
+              <!-- JS ile dolar -->
+            </tbody>
+          </table>
+        </div>
+        
+        <div class="pagination">
+          <button id="prevBtn"><i class="ri-arrow-left-s-line"></i></button>
+          <div id="pageNumbersContainer" style="display:flex; gap:5px;"></div>
+          <button id="nextBtn"><i class="ri-arrow-right-s-line"></i></button>
+        </div>
+      </div> 
+    </main>
+  </div>
+
+  <!-- ==================== MODALLAR (EN ALTTA OLMALI) ==================== -->
+  
+  <!-- Kullanıcı Düzenle Modalı -->
+  <div id="editUserModal" class="modal-overlay">
+    <div class="modal-content">
+      <div class="modal-header">
+        <h2><i class="ri-edit-2-line"></i> Kullanıcı Düzenle</h2>
+        <button id="closeModalBtn" class="close-btn"><i class="ri-close-line"></i></button>
+      </div>
+      <form id="editUserForm">
+        <input type="hidden" id="editUserId">
+        <div class="input-group" style="margin-bottom: 1rem;">
+            <div class="input-wrapper">
+                <i class="ri-user-line"></i>
+                <input type="text" id="editUsername" required placeholder="Kullanıcı Adı">
+            </div>
+            <div class="input-wrapper">
+                <i class="ri-shield-user-line"></i>
+                <input type="text" id="editRole" required placeholder="Rol">
+            </div>
+        </div>
+        <div class="input-wrapper">
+            <i class="ri-lock-password-line"></i>
+            <input type="password" id="editPassword" placeholder="Yeni Şifre (Boş bırakılabilir)">
+        </div>
+        <div class="input-group" style="margin-bottom: 1rem;">
+            <div class="input-wrapper">
+                <i class="ri-store-2-line"></i>
+                <input type="text" id="editCompany" placeholder="Bayi">
+            </div>
+            <div class="input-wrapper">
+                <i class="ri-phone-fill"></i>
+                <input type="text" id="editPhone" placeholder="Telefon">
+            </div>
+        </div>
+        <button type="submit" class="submit-btn">Güncelle</button>
+      </form>
+    </div>
+  </div>
+
+  <!-- Bildirim Gönder Modalı -->
+  <div id="notifyModal" class="modal-overlay">
+    <div class="modal-content">
+        <div class="modal-header">
+            <h2><i class="ri-notification-3-line"></i> Bildirim Gönder</h2>
+            <button id="closeNotifyModalBtn" class="close-btn"><i class="ri-close-line"></i></button>
+        </div>
+        <form id="notifyForm">
+            <div style="margin-bottom: 1rem; color: var(--text-muted); font-size: 0.9rem;">
+                <i class="ri-group-line"></i> <span id="notifyRecipientCount" style="color:white; font-weight:bold;">0</span> kullanıcı seçildi.
+            </div>
+            
+            <div class="input-wrapper">
+                <i class="ri-text"></i>
+                <input type="text" id="notifyTitle" placeholder="Bildirim Başlığı" required>
+            </div>
+
+            <div class="input-wrapper">
+                <select id="notifyType" class="modern-select">
+                    <option value="info">Bilgi (Mavi)</option>
+                    <option value="success">Başarı (Yeşil)</option>
+                    <option value="warning">Uyarı (Sarı)</option>
+                    <option value="error">Hata (Kırmızı)</option>
+                </select>
+            </div>
+
+            <div class="input-wrapper">
+                <div class="variable-tags">
+                    <span class="tag" onclick="insertVar('{username}')">+ İsim</span>
+                    <span class="tag" onclick="insertVar('{company}')">+ Bayi</span>
+                    <span class="tag" onclick="insertVar('{role}')">+ Rol</span>
+                </div>
+                <textarea id="notifyMessage" rows="5" placeholder="Mesajınızı yazın..." required></textarea>
+            </div>
+
+            <button type="submit" class="submit-btn notify-btn">Gönder</button>
+        </form>
+    </div>
+  </div>
+
+  <script src="{{ url_for('static', filename='js/admin.js') }}"></script>
+</body>
+</html>

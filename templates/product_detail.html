@@ -1,0 +1,359 @@
+<!DOCTYPE html>
+<html lang="tr">
+<head>
+  <meta charset="UTF-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1">
+  <title>{{ product.name }} | Ürün Detayı</title>
+  
+  <link rel="stylesheet" href="{{ url_for('static', filename='storage.css') }}">
+  <link rel="stylesheet" href="{{ url_for('static', filename='sidebar.css') }}">
+  <link rel="stylesheet" href="{{ url_for('static', filename='product_detail.css') }}">
+  <link href="https://cdn.jsdelivr.net/npm/remixicon@4.2.0/fonts/remixicon.css" rel="stylesheet">
+</head>
+<body>
+
+{% include "sidebar.html" %}
+
+<main class="detail-container">
+    
+    <!-- ÜST BAR -->
+    <div class="detail-header">
+        <a href="/storage#mevcut-stoklar" class="btn-back">
+            <i class="ri-arrow-left-line"></i> Listeye Dön
+        </a>
+        <div class="header-actions">
+            <!-- GÖRÜNTÜLEME MODU BUTONLARI -->
+            <div class="view-mode-el" style="display:flex; gap:10px;">
+                <button class="btn-secondary" onclick="toggleEditMode(true)">
+                    <i class="ri-pencil-line"></i> Düzenle
+                </button>
+                <button class="btn-delete-action" onclick="deleteProduct({{ product.id }})">
+                    <i class="ri-delete-bin-line"></i> Sil
+                </button>
+            </div>
+
+            <!-- DÜZENLEME MODU BUTONLARI -->
+            <div class="edit-mode-el" style="display:none; gap:10px;">
+                <button class="btn-secondary" onclick="toggleEditMode(false)" style="background:#F3F4F6; color:#4B5563;">
+                    <i class="ri-close-line"></i> Vazgeç
+                </button>
+                <button class="btn-secondary" onclick="saveInlineChanges()" style="background:#10B981; color:white; border-color:#059669;">
+                    <i class="ri-save-3-line"></i> Kaydet
+                </button>
+            </div>
+        </div>
+    </div>
+
+    <div class="detail-grid">
+        
+        <!-- SOL KOLON: ÜRÜN KARTI (RESİM & BİLGİ) -->
+        <div class="detail-card product-main-card">
+            
+            <!-- RESİM ALANI (DÜZENLEME DESTEKLİ) -->
+            <div class="product-image-area" id="img-area">
+                <!-- Mevcut Resim veya Placeholder -->
+                <img id="display-img" 
+                     src="{{ url_for('static', filename=product.image_path) if product.image_path else '' }}" 
+                     alt="{{ product.name }}"
+                     style="{{ 'display:none;' if not product.image_path else '' }}">
+                
+                <div id="no-img-placeholder" class="no-image-placeholder" style="{{ 'display:flex;' if not product.image_path else 'display:none;' }}">
+                    <i class="ri-image-line"></i>
+                    <span>Görsel Yok</span>
+                </div>
+
+                <!-- DÜZENLEME MODU İÇİN KONTROLLER -->
+                <div class="img-edit-overlay edit-mode-el">
+                    <input type="file" id="new-img-input" accept="image/*" hidden onchange="previewImage(this)">
+                    <button type="button" class="btn-img-action upload" onclick="document.getElementById('new-img-input').click()">
+                        <i class="ri-upload-cloud-line"></i> Fotoğraf Seç
+                    </button>
+                    <button type="button" class="btn-img-action delete" onclick="removeImage()">
+                        <i class="ri-delete-bin-line"></i> Sil
+                    </button>
+                </div>
+            </div>
+            
+            <div class="product-info-area">
+                <span class="product-code">#{{ product.code }}</span>
+                
+                <!-- Ürün Adı -->
+                <h1 class="product-title view-mode-el">{{ product.name }}</h1>
+                <input type="text" id="inp-name" class="edit-mode-el inline-input title-input" value="{{ product.name }}">
+
+                <!-- Açıklama -->
+                <p class="product-desc view-mode-el">{{ product.description or 'Açıklama girilmemiş.' }}</p>
+                <textarea id="inp-desc" class="edit-mode-el inline-textarea" placeholder="Ürün açıklaması...">{{ product.description or '' }}</textarea>
+                
+                <!-- DİNAMİK NİTELİKLER ALANI -->
+                {% if definitions %}
+                <div class="custom-attrs-area" style="margin-bottom: 15px; padding: 10px; background: #F9FAFB; border-radius: 8px; border: 1px dashed #E5E7EB;">
+                    <h5 style="margin: 0 0 10px 0; font-size: 0.85rem; color: #6B7280; font-weight: 700; text-transform: uppercase;">Özellikler</h5>
+                    
+                    <div style="display: grid; grid-template-columns: 1fr 1fr; gap: 10px;">
+                        {% for def in definitions %}
+                            {% set val = product.custom_attributes.get(def.name, '') if product.custom_attributes else '' %}
+                            
+                            <div class="attr-item">
+                                <label style="font-size: 0.8rem; font-weight: 600; color: #374151; display: block;">{{ def.name }}</label>
+                                
+                                <!-- Görüntüleme Modu -->
+                                <span class="view-mode-el" style="font-size: 0.95rem; color: #111827;">
+                                    {{ val if val else '-' }}
+                                </span>
+
+                                <!-- Düzenleme Modu -->
+                                <select class="clean-select inp-custom-attr" data-key="{{ def.name }}">
+                                    <option value="">-- Seçiniz --</option>
+                                    {% for opt in def.options %}
+                                        {% set opt_label = opt.label if opt is mapping else opt %}
+                                        {% set opt_code = opt.code if (opt is mapping and opt.code) else '' %}
+                                        
+                                        <option value="{{ opt_label }}" {% if opt_label == val %}selected{% endif %}>
+                                            {{ opt_label }}{% if opt_code %}[{{ opt_code }}]{% endif %}
+                                        </option>
+                                    {% endfor %}
+                                </select>
+                            </div>
+                        {% endfor %}
+                    </div>
+                </div>
+                {% endif %}
+                
+                <!-- Rozetler -->
+                <div class="info-badges">
+                    <span class="badge-item"><i class="ri-price-tag-3-line"></i> {{ product.category }}</span>
+                    <span class="badge-item"><i class="ri-palette-line"></i> {{ product.color_id or '-' }}</span>
+                </div>
+
+                <!-- Fiyatlar -->
+                <div class="price-list view-mode-el">
+                    {% for curr, val in product.currency.items() %}
+                        {% if val > 0 %}
+                        <div class="price-tag">
+                            <span class="curr-label">{{ curr }}</span>
+                            <span class="curr-val">{{ val }}</span>
+                        </div>
+                        {% endif %}
+                    {% endfor %}
+                </div>
+
+                <!-- Fiyatlar (Düzenleme Modu) -->
+                <div class="price-list edit-mode-el d-flex" style="display:none; gap:10px;">
+                    <div class="price-tag edit">
+                        <span class="curr-label">TL</span>
+                        <input type="number" step="0.01" class="clean-inp inp-price" data-currency="TL" value="{{ product.currency.get('TL', 0) }}">
+                    </div>
+                    <div class="price-tag edit">
+                        <span class="curr-label">USD</span>
+                        <input type="number" step="0.01" class="clean-inp inp-price" data-currency="USD" value="{{ product.currency.get('USD', 0) }}">
+                    </div>
+                    <div class="price-tag edit">
+                        <span class="curr-label">EURO</span>
+                        <input type="number" step="0.01" class="clean-inp inp-price" data-currency="EURO" value="{{ product.currency.get('EURO', 0) }}">
+                    </div>
+                </div>
+            </div>
+        </div>
+
+        <!-- ORTA KOLON: STOK VE RAF DURUMU -->
+        <div class="detail-card stock-card">
+            <h3 class="card-title"><i class="ri-stack-line"></i> Stok & Konum</h3>
+            
+            <div class="total-stock-display">
+                <div class="ts-item">
+                    <span class="ts-label">Seri Stoğu</span>
+                    <span class="ts-value">{{ product.stock }}</span>
+                </div>
+                <div class="ts-divider"></div>
+                <div class="ts-item">
+                    <span class="ts-label">Min. Stok</span>
+                    <span class="ts-value text-danger view-mode-el">{{ product.min_stock }}</span>
+                    <input type="number" id="inp-min-stock" class="edit-mode-el inline-input" value="{{ product.min_stock }}" style="width:80px; text-align:center; font-weight:800;">
+                </div>
+            </div>
+
+            <hr class="divider">
+
+            <h4 class="sub-title">Raf Dağılımı</h4>
+            {% if product.shelves and product.shelves|length > 0 %}
+                <div class="shelf-list">
+                    {% for shelf in product.shelves %}
+                    <div class="shelf-item">
+                        <div class="shelf-code"><i class="ri-map-pin-line"></i> {{ shelf.code }}</div>
+                        <div class="shelf-qty">{{ shelf.quantity }} <small>Adet</small></div>
+                        {% if shelf.sizes %}
+                        <div class="shelf-sizes-tooltip">
+                            {% for s, q in shelf.sizes.items() %}<span><b>{{ s }}:</b> {{ q }}</span>{% endfor %}
+                        </div>
+                        {% endif %}
+                    </div>
+                    {% endfor %}
+                </div>
+            {% else %}
+                <p class="empty-text">Raf bilgisi yok.</p>
+            {% endif %}
+
+            <hr class="divider">
+
+            <h4 class="sub-title">Beden Dağılımı</h4>
+            {% if product.sizes and product.sizes|length > 0 %}
+                <div class="sizes-grid">
+                    {% for size in product.sizes %}
+                    <div class="size-box">
+                        <span class="sz-name">{{ size.value }}</span>
+                        <div class="sz-details">
+                            <span>Seride: <b>{{ size.number }}</b></span>
+                            <span>Toplam: <b>{{ size.stock }}</b></span>
+                        </div>
+                    </div>
+                    {% endfor %}
+                </div>
+            {% else %}
+                <p class="empty-text">Beden detayı yok.</p>
+            {% endif %}
+        </div>
+
+        <!-- ALT SATIR: SATIŞ GEÇMİŞİ -->
+        <div class="detail-card history-card full-width">
+            <h3 class="card-title"><i class="ri-history-line"></i> Satış Hareketleri</h3>
+            <div class="table-responsive">
+                <table class="detail-table">
+                    <thead>
+                        <tr>
+                            <th>Tarih</th><th>Müşteri</th><th>Personel</th><th>Adet</th><th>Tutar</th><th>Not</th>
+                        </tr>
+                    </thead>
+                    <tbody>
+                        {% if sales %}
+                            {% for sale in sales %}
+                            <tr>
+                                <td>{{ sale.sale_date.strftime('%d.%m.%Y %H:%M') }}</td>
+                                <td>{{ sale.customer_name or 'Misafir' }}</td>
+                                <td>{{ user.query.get(sale.user_id).username if user.query.get(sale.user_id) else '-' }}</td>
+                                <td><span class="qty-badge">{{ sale.quantity }}</span></td>
+                                <td style="color:#10B981; font-weight:bold;">{{ "%.2f"|format(sale.total_price) }} {{ sale.currency }}</td>
+                                <td>{{ sale.sale_notes or '-' }}</td>
+                            </tr>
+                            {% endfor %}
+                        {% else %}
+                            <tr><td colspan="6" style="text-align:center; padding:20px; color:#999;">Kayıt yok.</td></tr>
+                        {% endif %}
+                    </tbody>
+                </table>
+            </div>
+        </div>
+
+    </div>
+</main>
+
+<script>
+    // --- 1. RESİM YÖNETİMİ ---
+    let imageAction = "keep"; // keep, update, delete
+
+    function previewImage(input) {
+        if (input.files && input.files[0]) {
+            const reader = new FileReader();
+            reader.onload = function(e) {
+                document.getElementById('display-img').src = e.target.result;
+                document.getElementById('display-img').style.display = 'block';
+                document.getElementById('no-img-placeholder').style.display = 'none';
+                imageAction = "update";
+            }
+            reader.readAsDataURL(input.files[0]);
+        }
+    }
+
+    function removeImage() {
+        document.getElementById('display-img').src = "";
+        document.getElementById('display-img').style.display = 'none';
+        document.getElementById('no-img-placeholder').style.display = 'flex';
+        document.getElementById('new-img-input').value = ""; // Inputu temizle
+        imageAction = "delete";
+    }
+
+    // --- 2. DÜZENLEME MODU ---
+    function toggleEditMode(enable) {
+        if (enable) {
+            document.body.classList.add('is-editing');
+        } else {
+            document.body.classList.remove('is-editing');
+            window.location.reload(); // İptal edilirse sayfayı yenile
+        }
+    }
+
+    // --- 3. KAYDETME ---
+    async function saveInlineChanges() {
+        const btnSave = document.querySelector('.edit-mode-el button[onclick="saveInlineChanges()"]');
+        const originalText = btnSave.innerHTML;
+        btnSave.disabled = true;
+        btnSave.innerHTML = '<i class="ri-loader-4-line ri-spin"></i>';
+
+        try {
+            const productId = {{ product.id }};
+            const name = document.getElementById('inp-name').value;
+            const description = document.getElementById('inp-desc').value;
+            const minStock = document.getElementById('inp-min-stock').value;
+
+            // Fiyatları Topla
+            const currencyData = {};
+            document.querySelectorAll('.inp-price').forEach(input => {
+                const val = parseFloat(input.value);
+                if (!isNaN(val)) currencyData[input.dataset.currency] = val;
+            });
+
+            // --- YENİ: ÖZEL NİTELİKLERİ TOPLA ---
+            const customAttrsData = {};
+            document.querySelectorAll('.inp-custom-attr').forEach(input => {
+                const key = input.dataset.key;
+                const val = input.value.trim();
+                // Boş olsa bile kaydediyoruz ki kullanıcı silebilsin
+                if (key) customAttrsData[key] = val; 
+            });
+            // ------------------------------------
+
+            const formData = new FormData();
+            formData.append("id", productId);
+            formData.append("name", name);
+            formData.append("description", description);
+            formData.append("min_stock", minStock);
+            formData.append("currency", JSON.stringify(currencyData));
+            
+            // --- JSON OLARAK EKLE ---
+            formData.append("custom_attributes", JSON.stringify(customAttrsData));
+            
+            formData.append("image_action", imageAction);
+
+            if (imageAction === "update") {
+                const fileInput = document.getElementById('new-img-input');
+                if (fileInput.files[0]) {
+                    formData.append("image", fileInput.files[0]);
+                }
+            }
+
+            const res = await fetch("/update_product_route", {
+                method: "POST",
+                body: formData
+            });
+
+            const result = await res.json();
+
+            if (res.ok) {
+                window.location.reload();
+            } else {
+                alert("Hata: " + (result.message || "Başarısız."));
+                btnSave.disabled = false;
+                btnSave.innerHTML = originalText;
+            }
+
+        } catch (err) {
+            console.error(err);
+            alert("Sunucu hatası.");
+            btnSave.disabled = false;
+            btnSave.innerHTML = originalText;
+        }
+    }
+</script>
+
+</body>
+</html>

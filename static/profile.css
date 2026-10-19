@@ -1,0 +1,164 @@
+/* /static/profile.css */
+
+/* === KÖK DEĞİŞKENLER VE TEMEL AYARLAR (manager.css'den alınmıştır) === */
+:root {
+  --bg-color: #F9FAFB;
+  --card-bg-color: #FFFFFF;
+  --border-color: #E5E7EB;
+  --text-primary: #1F2937;
+  --text-secondary: #6B7280;
+  --primary-color: #3B82F6;
+  --primary-hover: #2563EB;
+  --danger-color: #EF4444;
+  --success-color: #10B981;
+  --focus-ring-color: rgba(59, 130, 246, 0.25);
+  --radius-md: 6px;
+  --radius-lg: 12px;
+  --shadow-sm: 0 1px 2px 0 rgba(0, 0, 0, 0.05);
+}
+
+* { box-sizing: border-box; margin: 0; padding: 0; }
+
+body {
+  font-family: 'Inter', sans-serif;
+  background-color: var(--bg-color);
+  color: var(--text-primary);
+  display: flex;
+}
+
+/* === ANA YAPI === */
+.main-container {
+  flex-grow: 1;
+  padding: 2rem;
+}
+
+.card {
+  background-color: var(--card-bg-color);
+  border: 1px solid var(--border-color);
+  border-radius: var(--radius-lg);
+  padding: 1.5rem 2rem;
+  box-shadow: var(--shadow-sm);
+  max-width: 1000px;
+  margin: auto;
+}
+
+.card-header {
+  padding-bottom: 1rem;
+  margin-bottom: 1.5rem;
+  border-bottom: 1px solid var(--border-color);
+}
+
+.card-title {
+  font-size: 1.5rem;
+  font-weight: 700;
+  display: flex;
+  align-items: center;
+  gap: 0.75rem;
+}
+.card-title i { color: var(--primary-color); }
+
+.card-header p {
+  font-size: 1rem;
+  color: var(--text-secondary);
+  margin-top: 0.25rem;
+}
+
+/* === PROFİL FORMLARI İÇİN ÖZEL STİLLER === */
+.profile-container {
+  display: grid;
+  grid-template-columns: 1fr 1fr;
+  gap: 2.5rem;
+}
+
+.form-section {
+  padding: 1.5rem;
+  border: 1px solid var(--border-color);
+  border-radius: var(--radius-md);
+  background-color: #fdfdfd;
+}
+
+.form-section:last-child {
+  border-left: 1px solid var(--border-color);
+}
+
+.form-section h3 {
+  font-size: 1.2rem;
+  font-weight: 600;
+  margin-bottom: 1.5rem;
+  display: flex;
+  align-items: center;
+  gap: 0.5rem;
+}
+
+.form-group {
+  margin-bottom: 1.25rem;
+}
+
+.form-group label {
+  display: block;
+  font-weight: 500;
+  margin-bottom: 0.5rem;
+  font-size: 0.9rem;
+}
+
+input[type="text"], input[type="tel"], input[type="password"] {
+  width: 100%;
+  padding: 0.75rem 1rem;
+  border: 1px solid var(--border-color);
+  border-radius: var(--radius-md);
+  font-size: 1rem;
+  transition: border-color 0.2s, box-shadow 0.2s;
+}
+
+input:focus {
+  outline: none;
+  border-color: var(--primary-color);
+  box-shadow: 0 0 0 3px var(--focus-ring-color);
+}
+
+.form-actions {
+  margin-top: 1.5rem;
+  display: flex;
+  justify-content: flex-end;
+}
+
+.btn {
+  padding: 0.75rem 1.5rem;
+  border-radius: var(--radius-md);
+  border: 1px solid transparent;
+  cursor: pointer;
+  font-weight: 600;
+  font-size: 0.95rem;
+  transition: all 0.2s;
+}
+.btn-primary { background-color: var(--primary-color); color: #fff; }
+.btn-primary:hover { background-color: var(--primary-hover); }
+
+/* === TOAST BİLDİRİMİ === */
+#toast {
+  position: fixed;
+  right: 20px;
+  top: 20px;
+  color: #fff;
+  font-weight: 600;
+  padding: 0.8rem 1.2rem;
+  border-radius: var(--radius-md);
+  display: none;
+  z-index: 9999;
+  box-shadow: var(--shadow-md);
+}
+
+/* === RESPONSIVE DÜZENLEMELER === */
+@media (max-width: 992px) {
+  .profile-container {
+    grid-template-columns: 1fr;
+    gap: 1.5rem;
+  }
+  .form-section:last-child {
+    border-left: 1px solid var(--border-color); /* Dikeyde de ayırıcı kalsın */
+  }
+}
+@media (max-width: 768px) {
+  .main-container { padding: 1rem; }
+  .card { padding: 1rem; }
+}

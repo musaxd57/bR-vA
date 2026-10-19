@@ -1,0 +1,57 @@
+<!DOCTYPE html>
+<html lang="tr">
+<head>
+  <meta charset="UTF-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1.0">
+  <title>envaner | Raf Yönetimi</title>
+  <link rel="stylesheet" href="{{ url_for('static', filename='definitions.css') }}">
+  <link rel="stylesheet" href="{{ url_for('static', filename='sidebar.css') }}">
+  <link href="https://cdn.jsdelivr.net/npm/remixicon@4.2.0/fonts/remixicon.css" rel="stylesheet">
+</head>
+<body>
+{% include "sidebar.html" %}
+
+<main class="main-container">
+    <div class="content-wrapper">
+        <section id="shelfPanel" class="card">
+            <header class="card-header">
+                <h2 class="card-title"><i class="ri-database-2-line"></i>Yeni Raf Ekle</h2>
+            </header>
+            <div class="card-body">
+                <form id="shelfForm">
+                    <div class="form-group">
+                        <label for="newShelf">Raf Kodu</label>
+                        <input id="newShelf" type="text" placeholder="Örn: A12" required>
+                    </div>
+                    <div class="form-actions">
+                        <button type="reset" class="btn btn-secondary">Temizle</button>
+                        <button type="submit" class="btn btn-primary">Kaydet</button>
+                    </div>
+                </form>
+            </div>
+        </section>
+
+        <section id="savedShelves" class="card">
+            <header class="card-header">
+                <h3 class="card-title"><i class="ri-list-check"></i>Kaydedilen Raflar</h3>
+            </header>
+            <div class="card-body">
+                <div class="table-wrapper">
+                    <table id="shelves_table">
+                        <thead>
+                            <tr>
+                                <th>Raf Kodu</th>
+                                <th>İşlemler</th>
+                            </tr>
+                        </thead>
+                        <tbody><!-- JS ile doldurulacak --></tbody>
+                    </table>
+                </div>
+            </div>
+        </section>
+    </div>
+</main>
+
+<script src="{{ url_for('static', filename='js/addshelf.js') }}"></script> 
+</body>
+</html>

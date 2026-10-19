@@ -1,0 +1,76 @@
+<!DOCTYPE html>
+<html lang="tr">
+<head>
+  <meta charset="UTF-8" />
+  <meta name="viewport" content="width=device-width, initial-scale=1" />
+  <title>envaner | Kategori Yönetimi</title>
+  <link rel="stylesheet" href="{{ url_for('static', filename='definitions.css') }}">
+  <link rel="stylesheet" href="{{ url_for('static', filename='sidebar.css') }}">
+  <link href="https://cdn.jsdelivr.net/npm/remixicon@4.2.0/fonts/remixicon.css" rel="stylesheet">
+</head>
+<body>
+{% include "sidebar.html" %}
+
+<main class="main-container">
+  <div class="content-wrapper">
+    <section class="card">
+        <header class="card-header">
+            <h2 class="card-title"><i class="ri-add-box-line"></i>Kategori ve Beden Ekle</h2>
+        </header>
+        <div class="card-body">
+            <form id="categoryForm" autocomplete="off">
+                <div class="form-grid">
+                    <div class="form-group">
+                        <label for="categoryName">Kategori Adı</label>
+                        <input id="categoryName" type="text" placeholder="Örn: Ceket" />
+                    </div>
+                    <div class="form-group">
+                        <label for="sizeInput">Beden Ekle</label>
+                        <div class="input-with-button">
+                            <input id="sizeInput" type="text" placeholder="Örn: XL" style="flex-grow: 1;" />
+                            <button id="addSizeBtn" type="button" class="btn btn-primary icon">+</button>
+                        </div>
+                    </div>
+                </div>
+
+                <div class="form-group">
+                    <label>Eklenen Bedenler (Silmek için üzerine tıklayın)</label>
+                    <div id="sizeListContainer" class="chip-container" aria-live="polite">
+                        <ul id="sizeList" class="chip-list"></ul>
+                        <p id="emptyHint" class="hint">Henüz beden eklenmedi.</p>
+                    </div>
+                </div>
+
+                <div class="form-actions">
+                    <button id="submitBtn" type="submit" class="btn btn-primary">Kategoriyi Kaydet</button>
+                </div>
+                <p id="formStatus" role="status" aria-live="polite"></p>
+            </form>
+        </div>
+    </section>
+
+    <section id="savedCategories" class="card">
+        <header class="card-header">
+            <h3 class="card-title"><i class="ri-list-check"></i>Kaydedilen Kategoriler</h3>
+        </header>
+        <div class="card-body">
+            <div class="table-wrapper">
+                <table id="categories_table">
+                    <thead>
+                        <tr>
+                            <th>Kategori</th>
+                            <th>Bedenler</th>
+                            <th>İşlemler</th>
+                        </tr>
+                    </thead>
+                    <tbody><!-- JS ile doldurulacak --></tbody>
+                </table>
+            </div>
+        </div>
+    </section>
+  </div>
+</main>
+
+<script src="{{ url_for('static', filename='js/addcategory.js') }}"></script> 
+</body>
+</html>

@@ -1,0 +1,144 @@
+<link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.4.0/css/all.min.css">
+
+<!-- Menüyü Açma/Kapama Butonu -->
+<button id="sidebar-toggle" class="sidebar-toggle-btn">
+    <i class="fas fa-bars"></i>
+    <span id="toggle-notification-dot" class="notification-dot" style="display: none;"></span>
+</button>
+
+<!-- Sidebar Ana Yapısı -->
+<aside id="sidebar" class="sidebar">
+    <div class="sidebar-header">
+        <h1 class="logo">envaner</h1>
+    </div>
+    <hr>
+    <nav class="sidebar-nav">
+        
+        <!-- YENİ EKLENEN: HIZLI SATIŞ BUTONU (En Başta ve Ayrı) -->
+        <div class="sidebar-item" style="margin-bottom: 5px;">
+            <a href="{{ url_for('storage') }}#sorgula-ve-sat" style="background: rgba(255, 255, 255, 0.05); border-left: 4px solid #10B981;">
+                <div class="menu-item-content">
+                    <i class="ri-shopping-cart-2-fill" style="color: #10B981;"></i>
+                    <span style="font-weight: 700; color: #fff;">Satış Yap</span>
+                </div>
+            </a>
+        </div>
+        
+        <!-- Ayırıcı Çizgi (Diğer menülerden ayırmak için) -->
+        <hr style="border: 0; border-top: 1px solid rgba(255,255,255,0.1); margin: 10px 15px 20px 15px;">
+        
+        <!-- Mağaza Yönetimi -->
+        <div class="sidebar-item">
+            <a href="#" class="sidebar-dropdown-toggle">
+                <div class="menu-item-content">
+                    <i class="ri-store-2-line"></i>
+                    <span>Mağaza Yönetimi</span>
+                </div>
+                <i class="fas fa-chevron-down arrow-icon"></i>
+            </a>
+            <div class="sidebar-submenu">
+                <a href="{{ url_for('manager') }}#gosterge-paneli">Gösterge Paneli</a>
+                <a href="{{ url_for('manager') }}#calisan-yonetimi">Çalışan Yönetimi</a>
+                <a href="{{ url_for('manager') }}#satis-gecmisi">Satış Geçmişi</a>
+            </div>
+        </div>
+
+        <!-- Depo İşlemleri -->
+        <div class="sidebar-item">
+            <a href="#" class="sidebar-dropdown-toggle">
+                <div class="menu-item-content">
+                    <i class="ri-box-3-line"></i>
+                    <span>Depo İşlemleri</span>
+                </div>
+                <i class="fas fa-chevron-down arrow-icon"></i>
+            </a>
+            <div class="sidebar-submenu">
+                <a href="{{ url_for('storage') }}#sadece-sorgula">Ürün Sorgula</a>   
+                <a href="{{ url_for('storage') }}#yeni-urun-ekle">Ürün Ekle</a>
+                <a href="{{ url_for('storage') }}#mevcut-stoklar">Stokları Görüntüle</a>
+                <a href="{{ url_for('storage') }}#gider-ekle">Gider Ekle</a>
+                <a href="{{ url_for('storage') }}#gelen-siparisler">Siparişler</a>
+                <a href="{{ url_for('storage') }}#depoya-yerlestir">Depoya Yerleştir</a>
+            </div>
+        </div>
+
+        <!-- Tanımlamalar -->
+        <div class="sidebar-item">
+            <a href="#" class="sidebar-dropdown-toggle">
+                <div class="menu-item-content">
+                    <i class="ri-settings-3-line"></i>
+                    <span>Tanımlamalar</span>
+                </div>
+                <i class="fas fa-chevron-down arrow-icon"></i>
+            </a>
+            <div class="sidebar-submenu">
+                <a href="{{ url_for('storage') }}#barkod-kurallari">Barkod Kuralları</a>
+                <a href="{{ url_for('storage') }}#nitelik-yonetimi">Nitelik Yönetimi</a>
+                <a href="{{ url_for('definitions') }}#renk-tanimlama">Renk Tanımlama</a>
+                <a href="{{ url_for('definitions') }}#raf-tanimlama">Raf Tanımlama</a>
+                <a href="{{ url_for('definitions') }}#kategori-tanimlama">Kategori Tanımlama</a>
+            </div>
+        </div>
+
+        <!-- Müşteri İşlemleri -->
+        <div class="sidebar-item">
+            <a href="#" class="sidebar-dropdown-toggle">
+                <div class="menu-item-content">
+                    <i class="ri-id-card-line"></i>
+                    <span>Müşteri İşlemleri</span>
+                </div>
+                <i class="fas fa-chevron-down arrow-icon"></i>
+            </a>
+            <div class="sidebar-submenu">
+                <a href="{{ url_for('definitions') }}#musteri-tanimlama">Müşteri Tanımlama</a>
+                <a href="{{ url_for('customer_debts') }}">Müşteri Borçları</a>
+            </div>
+        </div>
+        
+        <!-- Bildirimler -->
+        <div class="sidebar-item">
+            <a href="{{ url_for('notifications') }}">
+                <div class="menu-item-content">
+                    <i class="ri-notification-3-line"></i>
+                    <span>Bildirimler</span>
+                </div>
+                <span id="sidebar-notification-count" class="notification-badge" style="display: none;">0</span>
+            </a>
+        </div>
+    </nav>
+
+    <div class="sidebar-footer">
+        <div class="sidebar-item">
+            <a href="{{ url_for('feedback') }}">
+                <div class="menu-item-content">
+                    <i class="ri-feedback-line"></i>
+                    <span>Geri Bildirim</span>
+                </div>
+            </a>
+        </div>
+        <div class="sidebar-item">
+            <a href="{{ url_for('profile') }}">
+                <div class="menu-item-content">
+                    <i class="ri-user-line"></i>
+                    <span>Profilim</span>
+                </div>
+            </a>
+        </div>
+        <hr>
+        <div class="contact-info">
+            <span>İletişim Bilgileri:</span>
+            <div class="contact-number">
+                <i class="fab fa-whatsapp"></i>
+                <span>+90 546 235 43 47</span>
+            </div>
+        </div>
+        <div class="logout-section">
+            <a href="{{ url_for('logout') }}" class="logout-link">
+                <i class="ri-logout-box-r-line"></i>
+                <span>Çıkış Yap</span>
+            </a>
+        </div>
+    </div>
+</aside>
+
+<script src="{{ url_for('static', filename='js/sidebar.js') }}"></script>

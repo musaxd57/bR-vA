@@ -1,0 +1,134 @@
+<!DOCTYPE html>
+<html lang="tr">
+<head>
+  <meta charset="utf-8" />
+  <meta name="viewport" content="width=device-width,initial-scale=1" />
+  <title>envaner | Müşteri Borçları</title>
+  
+  <link rel="preconnect" href="https://fonts.googleapis.com">
+  <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+  <link href="https://fonts.googleapis.com/css2?family=Inter:wght@400;500;600;700&display=swap" rel="stylesheet">
+  
+  <!-- Mevcut stil dosyalarınız, sayfanın tutarlı görünmesini sağlar -->
+  <link rel="stylesheet" href="/static/storage.css">
+  <link rel="stylesheet" href="/static/sidebar.css">
+  
+  <link href="https://cdn.jsdelivr.net/npm/remixicon@4.2.0/fonts/remixicon.css" rel="stylesheet">
+</head>
+<body>
+
+  <!-- Kenar Çubuğu -->
+  {% include "sidebar.html" %}
+
+  <main class="main-container">
+    <section class="card">
+      <h2 style="border-bottom: 1px solid var(--border-color); padding-bottom: 16px; margin-bottom: 24px;">
+        <i class="ri-wallet-3-line"></i> Müşteri Borçları Yönetimi
+      </h2>
+      
+      <div class="list-controls">
+        <input type="text" id="debt-search-input" placeholder="Müşteri adına veya telefona göre ara...">
+      </div>
+      
+      <div class="stok-table-wrap" role="region" aria-label="Müşteri Borçları Tablosu" tabindex="0">
+        <table class="stok-table">
+          <thead>
+            <tr>
+              <th>Müşteri Adı</th>
+              <th>Telefon</th>
+              <th>Borç Detayları</th>
+              <!-- İki butona yer açmak için genişletildi -->
+              <th style="text-align: center; min-width: 150px;">İşlemler</th>
+            </tr>
+          </thead>
+          <tbody id="debt-table-body">
+             <!-- Müşteri verileri JavaScript ile buraya eklenecek -->
+             <tr>
+                <td colspan="4" style="text-align: center; padding: 2rem;">Müşteriler yükleniyor...</td>
+             </tr>
+          </tbody>
+        </table>
+      </div>
+    </section>
+  </main>
+  
+  <!-- Bildirim (Toast) Mesajları için -->
+  <div id="toast" role="status" aria-live="polite"></div>
+
+  <!-- Tahsilat Yapma Modalı -->
+  <div id="payment-modal" class="modal-overlay" style="display: none;">
+    <div class="modal-content">
+      <form id="payment-form">
+        <h2 class="modal-title">
+            Tahsilat Yap: <span id="modal-customer-name" style="color: var(--primary-color);"></span>
+        </h2>
+        
+        <input type="hidden" id="payment-customer-id" name="customer_id">
+
+        <div class="form-group">
+            <label>Mevcut Borç Bakiyesi</label>
+            <div id="current-debt-display" class="summary-box" style="padding: 12px; text-align: left; background-color: #fff;">
+                <!-- Mevcut borçlar JS ile buraya eklenecek -->
+            </div>
+        </div>
+
+        <div class="form-grid">
+            <div class="form-group">
+                <label for="payment-amount">Tahsil Edilen Tutar</label>
+                <input id="payment-amount" name="amount" type="number" min="0.01" step="0.01" placeholder="0.00" required>
+            </div>
+            <div class="form-group">
+                <label for="payment-currency">Para Birimi</label>
+                <select id="payment-currency" name="currency" required>
+                    <option value="TL">TL</option>
+                    <option value="USD">USD</option>
+                    <option value="EURO">EURO</option>
+                </select>
+            </div>
+        </div>
+
+        <div class="form-group">
+          <label for="payment-note">Açıklama (Opsiyonel)</label>
+          <textarea id="payment-note" name="note" placeholder="Örn: Elden nakit alındı."></textarea>
+        </div>
+
+        <div class="modal-actions">
+          <button type="button" class="btn-secondary" id="cancel-payment">İptal</button>
+          <button type="submit" class="btn-primary"><i class="ri-check-line"></i>Tahsilatı Kaydet</button>
+        </div>
+      </form>
+    </div>
+  </div>
+
+  <!-- === YENİ EKLENDİ: İşlem Geçmişi Modalı === -->
+  <div id="history-modal" class="modal-overlay" style="display: none;">
+    <div class="modal-content" style="max-width: 800px;">
+        <h2 class="modal-title">
+            İşlem Geçmişi: <span id="history-customer-name" style="color: var(--primary-color);"></span>
+        </h2>
+        <div class="stok-table-wrap">
+            <table class="stok-table">
+                <thead>
+                    <tr>
+                        <th>Tarih</th>
+                        <th>İşlem Tipi</th>
+                        <th>Tutar</th>
+                        <th>Personel</th>
+                        <th>Açıklama / Satış ID</th>
+                    </tr>
+                </thead>
+                <tbody id="history-table-body">
+                    <!-- Geçmiş verileri JS ile buraya eklenecek -->
+                </tbody>
+            </table>
+        </div>
+        <div class="modal-actions">
+            <button type="button" class="btn-secondary" id="close-history-modal">Kapat</button>
+        </div>
+    </div>
+  </div>
+  
+  <!-- Bu sayfanın dinamik işlevleri için JavaScript dosyası -->
+  <script src="/static/js/customer_debts.js"></script>
+</body>
+</html>

@@ -1,0 +1,68 @@
+<!DOCTYPE html>
+<html lang="tr">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>envaner | Giriş Paneli</title>
+
+    <!-- Modern Font: Inter -->
+    <link rel="preconnect" href="https://fonts.googleapis.com">
+    <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+    <link href="https://fonts.googleapis.com/css2?family=Inter:wght@400;500;600;700&display=swap" rel="stylesheet">
+    
+    <!-- Remix Icon Kütüphanesi -->
+    <link href="https://cdn.jsdelivr.net/npm/remixicon@4.2.0/fonts/remixicon.css" rel="stylesheet">
+
+    <link rel="stylesheet" href="{{ url_for('static', filename='login.css') }}">
+</head>
+<body>
+
+    <div class="background-shapes"></div>
+
+    <main class="login-container">
+        <div class="glass-card">
+            <header class="card-header">
+                <h1 class="logo">envaner</h1>
+                <p class="subtitle">Yönetim paneline hoş geldiniz</p>
+            </header>
+
+            <form action="{{ url_for('login') }}" method="POST">
+                
+                <!-- Hatalı giriş mesajları için alan -->
+                {% with messages = get_flashed_messages(with_categories=true) %}
+                    {% if messages %}
+                        {% for category, message in messages %}
+                            <div class="error-message" role="alert">
+                                <i class="ri-error-warning-line"></i>
+                                <span>{{ message }}</span>
+                            </div>
+                        {% endfor %}
+                    {% endif %}
+                {% endwith %}
+
+                <div class="form-group">
+                    <label for="username">Kullanıcı Adı</label>
+                    <div class="input-wrapper">
+                        <i class="ri-user-line"></i>
+                        <input type="text" id="username" name="username" placeholder="Kullanıcı adınızı girin" required>
+                    </div>
+                </div>
+                
+                <div class="form-group">
+                    <label for="password">Şifre</label>
+                    <div class="input-wrapper">
+                        <i class="ri-lock-password-line"></i>
+                        <input type="password" id="password" name="password" placeholder="Şifrenizi girin" required>
+                    </div>
+                </div>
+                
+                <button type="submit" class="btn btn-primary">
+                    <span>Giriş Yap</span>
+                    <i class="ri-arrow-right-line"></i>
+                </button>
+            </form>
+        </div>
+    </main>
+
+</body>
+</html>

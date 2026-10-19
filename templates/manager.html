@@ -1,0 +1,400 @@
+<!DOCTYPE html>
+<html lang="tr">
+<head>
+  <meta charset="UTF-8" />
+  <meta name="viewport" content="width=device-width, initial-scale=1.0"/>
+  <title>envaner | Yönetim Paneli</title>
+  
+  <!-- Modern Font Ailesi -->
+  <link rel="preconnect" href="https://fonts.googleapis.com">
+  <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+  <link href="https://fonts.googleapis.com/css2?family=Inter:wght@400;500;600;700&display=swap" rel="stylesheet">
+  
+  <!-- CSS Dosyaları -->
+  <link rel="stylesheet" href="{{ url_for('static', filename='manager.css') }}">
+  <link rel="stylesheet" href="{{ url_for('static', filename='ai_chat.css') }}">
+  <link rel="stylesheet" href="{{ url_for('static', filename='sidebar.css') }}">
+  
+  <!-- İkon Kütüphaneleri -->
+  <link href="https://cdn.jsdelivr.net/npm/remixicon@4.2.0/fonts/remixicon.css" rel="stylesheet">
+  <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.4.0/css/all.min.css"/>
+</head>
+<body>
+
+  <!-- Sidebar -->
+  {% include "sidebar.html" %}
+
+  <!-- Ana İçerik -->
+  <main class="main-container">
+    
+    <!-- SEKME NAVİGASYONU -->
+    <div class="tabs-navigation">
+      <a href="#" class="tab-link active" data-tab="gosterge-paneli"><i class="ri-dashboard-line"></i> Gösterge Paneli</a>
+      <a href="#" class="tab-link" data-tab="calisan-yonetimi"><i class="ri-user-settings-line"></i> Çalışan Yönetimi</a>
+      <a href="#" class="tab-link" data-tab="satis-gecmisi"><i class="ri-history-line"></i> Satış Geçmişi</a>
+    </div>
+
+    <!-- SEKME İÇERİKLERİ -->
+    <div class="tabs-content">
+
+      <!-- Gösterge Paneli -->
+      <div id="gosterge-paneli" class="tab-panel active">
+    
+        <!-- 1. BÖLÜM: HERO BANNER (Finansal Özet - Son Tasarımdan) -->
+        <div class="hero-banner">
+            <div class="hero-header">
+                <div>
+                    <h2>Finansal Özet</h2>
+                    <span class="hero-date"><i class="ri-time-line"></i> Canlı Veriler</span>
+                </div>
+                <div class="hero-icon-bg">
+                    <i class="ri-funds-box-line"></i>
+                </div>
+            </div>
+
+            <div class="hero-stats-row">
+                <div class="hero-stat-item">
+                    <span class="stat-label">Ciro (TL)</span>
+                    <span class="stat-val" id="revenue-tl">₺0.00</span>
+                </div>
+                <div class="hero-stat-divider"></div>
+                <div class="hero-stat-item">
+                    <span class="stat-label">Ciro (USD)</span>
+                    <span class="stat-val" id="revenue-usd">$0.00</span>
+                </div>
+                <div class="hero-stat-divider"></div>
+                <div class="hero-stat-item">
+                    <span class="stat-label">Ciro (EUR)</span>
+                    <span class="stat-val" id="revenue-eur">€0.00</span>
+                </div>
+            </div>
+        </div>
+
+        <!-- 2. BÖLÜM: TEMEL METRİKLER (KPI Kartları - İlk Tasarımdan) -->
+        <div class="kpi-grid">
+            <div class="kpi-card card-blue">
+                <div class="kpi-content">
+                    <span class="kpi-label">Toplam Satış</span>
+                    <h3 class="kpi-value" id="total-sales-count">...</h3>
+                </div>
+                <div class="kpi-icon">
+                    <i class="ri-shopping-cart-2-fill"></i>
+                </div>
+            </div>
+
+            <div class="kpi-card card-purple">
+                <div class="kpi-content">
+                    <span class="kpi-label">Satılan Ürün</span>
+                    <h3 class="kpi-value" id="total-products-sold">...</h3>
+                </div>
+                <div class="kpi-icon">
+                    <i class="ri-shirt-fill"></i>
+                </div>
+            </div>
+        </div>
+
+        <!-- 3. BÖLÜM: GRAFİKLER VE ANALİZ (Modern Layout - İlk Tasarımdan) -->
+        <div class="analytics-layout">
+            
+            <!-- Sol: Büyük Grafik -->
+            <section class="modern-card chart-section">
+                <div class="card-header-clean">
+                    <h3>Satış Trendleri</h3>
+                    
+                    <!-- Grafik Kontrolleri -->
+                    <div class="chart-actions">
+                        <!-- Zaman Filtresi -->
+                        <div class="modern-select-wrapper">
+                            <select id="sales-time-filter" class="clean-select">
+                                <option value="daily">Bugün</option>
+                                <option value="weekly" selected>Bu Hafta</option>
+                                <option value="monthly">Bu Ay</option>
+                                <option value="3months">3 Ay</option>
+                                <option value="yearly">Yıl</option>
+                            </select>
+                            <i class="ri-arrow-down-s-line"></i>
+                        </div>
+
+                        <!-- Ürün Arama -->
+                        <div class="modern-search-wrapper">
+                            <i class="ri-search-line"></i>
+                            <input type="search" id="product-search-input" list="product-list" placeholder="Ürün analizi..." class="clean-input">
+                            <datalist id="product-list"></datalist>
+                        </div>
+
+                        <button id="show-product-chart-btn" class="icon-btn" title="Ara"><i class="ri-arrow-right-line"></i></button>
+                        <button id="reset-charts-btn" class="icon-btn secondary" title="Sıfırla"><i class="ri-refresh-line"></i></button>
+                    </div>
+                </div>
+
+                <div class="chart-body">
+                    <div id="product-chart-container" class="chart-canvas-wrapper hidden">
+                        <h5 id="product-chart-title" class="chart-internal-title"></h5>
+                        <canvas id="product-sales-chart"></canvas>
+                    </div>
+                    <div id="currency-chart-wrapper" class="chart-canvas-wrapper">
+                        <canvas id="currency-sales-chart"></canvas>
+                    </div>
+                </div>
+            </section>
+
+            <!-- Sağ: Küçük Widgetlar -->
+            <div class="widgets-column">
+                
+                <!-- En Çok Satanlar -->
+                <div class="modern-card widget-card">
+                    <div class="widget-header">
+                        <h4>Top Ürünler</h4>
+                        <i class="ri-pie-chart-2-line text-muted"></i>
+                    </div>
+                    <div class="chart-wrapper-small">
+                        <canvas id="top-products-chart"></canvas>
+                    </div>
+                </div>
+
+                <!-- En İyi Çalışanlar -->
+                <div class="modern-card widget-card">
+                    <div class="widget-header">
+                        <h4>Lider Tablosu</h4>
+                        <i class="ri-trophy-line text-muted"></i>
+                    </div>
+                    <div id="top-employees-list" class="leaderboard-clean"></div>
+                </div>
+
+            </div>
+        </div>
+
+      </div>
+
+      <!-- Çalışan Yönetimi Paneli -->
+      <section id="calisan-yonetimi" class="tab-panel">
+    
+        <!-- Başlık -->
+        <div class="dashboard-header">
+            <div>
+                <h2>Personel Yönetimi</h2>
+                <p class="text-muted">Ekip arkadaşlarınızı buradan ekleyebilir ve yetkilendirebilirsiniz.</p>
+            </div>
+        </div>
+
+        <div class="employee-layout-grid">
+            
+            <!-- 1. KART: YENİ ÇALIŞAN EKLEME -->
+            <div class="modern-card add-employee-section">
+                <div class="card-header-clean">
+                    <h3><i class="ri-user-add-line"></i> Yeni Kayıt</h3>
+                </div>
+                
+                <div class="add-employee-form-modern">
+                    <div class="form-group-modern">
+                        <label>Kullanıcı Adı</label>
+                        <input type="text" id="kullaniciAdi" class="clean-input full-width" placeholder="Örn: Ahmet Yılmaz" maxlength="15" autocomplete="off">
+                    </div>
+
+                    <div class="form-group-modern">
+                        <label>Şifre</label>
+                        <div class="password-wrapper-modern">
+                            <input type="password" id="passwordInput" class="clean-input full-width" placeholder="******" maxlength="15" autocomplete="new-password">
+                            <button id="togglePassword" class="eye-btn-modern" type="button"><i class="ri-eye-line"></i></button>
+                        </div>
+                    </div>
+
+                    <button class="calisan-ekle-btn btn-primary-modern" type="button">
+                        <i class="ri-add-circle-fill"></i> Kaydet
+                    </button>
+                </div>
+            </div>
+
+            <!-- 2. KART: ÇALIŞAN LİSTESİ -->
+            <div class="modern-card employee-list-section">
+                <div class="card-header-clean" style="padding: 20px 24px 0 24px;">
+                    <h3>Mevcut Personeller</h3>
+                </div>
+                
+                <div class="table-responsive">
+                    <table class="modern-table">
+                        <thead>
+                            <tr>
+                                <th width="30%">Adı Soyadı</th>
+                                <th width="40%">Yetkiler</th>
+                                <th width="30%" style="text-align: right;">İşlemler</th>
+                            </tr>
+                        </thead>
+                        <tbody id="employee-body">
+                            <!-- JS ile doldurulacak -->
+                        </tbody>
+                    </table>
+                </div>
+            </div>
+
+        </div>
+    </section>
+
+      <!-- Tüm Satışlar Paneli -->
+      <section id="satis-gecmisi" class="tab-panel">
+    
+        <!-- Başlık -->
+        <div class="dashboard-header">
+            <div>
+                <h2>Satış Geçmişi</h2>
+                <p class="text-muted">Geçmiş işlem kayıtlarını inceleyin, filtreleyin ve raporlayın.</p>
+            </div>
+            <div class="action-header-btn">
+                <button id="download-lod-btn" class="btn-primary-modern small">
+                    <i class="ri-file-pdf-2-line"></i> Raporu (LOD) İndir
+                </button>
+            </div>
+        </div>
+
+        <!-- MODERN KART: FİLTRE VE TABLO -->
+        <div class="modern-card no-padding">
+            
+            <!-- 1. FİLTRE TOOLBAR (Üst Kısım) -->
+            <div class="table-toolbar">
+                <div class="toolbar-grid">
+                    
+                    <!-- Arama -->
+                    <div class="filter-group">
+                        <i class="ri-search-line filter-icon"></i>
+                        <input type="search" id="sales-search-input" placeholder="Ürün veya personel ara..." class="filter-input">
+                    </div>
+
+                    <!-- Müşteri Seçimi -->
+                    <div class="filter-group">
+                        <i class="ri-user-search-line filter-icon"></i>
+                        <select id="customer-filter-select" class="filter-select">
+                            <option value="">Tüm Müşteriler</option>
+                            <!-- JS ile dolacak -->
+                        </select>
+                        <i class="ri-arrow-down-s-line arrow-icon"></i>
+                    </div>
+
+                    <!-- Tarih Aralığı (Birleşik) -->
+                    <div class="filter-group date-group">
+                        <i class="ri-calendar-line filter-icon"></i>
+                        <input type="date" id="start-date-input" class="filter-date">
+                        <span class="date-separator">➜</span>
+                        <input type="date" id="end-date-input" class="filter-date">
+                    </div>
+
+                    <!-- Temizle Butonu -->
+                    <button id="clear-filters-btn" class="filter-reset-btn" title="Filtreleri Temizle">
+                        <i class="ri-filter-off-line"></i>
+                    </button>
+                </div>
+            </div>
+
+            <!-- 2. TABLO ALANI -->
+            <div class="table-responsive">
+                <table id="all-sales-table" class="modern-table hover-effect">
+                    <thead>
+                        <tr>
+                            <th width="25%">Müşteri</th>
+                            <th width="20%">Toplam Tutar</th>
+                            <th width="20%">Satan Kişi</th>
+                            <th width="20%">Tarih</th>
+                            <th width="15%" style="text-align: center;">Fiş</th>
+                        </tr>
+                    </thead>
+                    <tbody id="all-sales-body">
+                        <!-- JS ile doldurulacak -->
+                    </tbody>
+                </table>
+            </div>
+
+            <!-- 3. SAYFALAMA (Alt Kısım) -->
+            <div class="table-footer">
+                <div id="pagination-controls" class="pagination-modern"></div>
+            </div>
+
+        </div>
+    </section>
+
+    </div><!-- .tabs-content sonu -->
+  </main>
+  
+  <div id="toast" role="status" aria-live="polite"></div>
+
+  <!-- İzinler Yönetim Paneli (Modal) -->
+  <div id="permissions-modal" class="modal-overlay hidden">
+    <div class="modal-content">
+        <div class="modal-header">
+            <h3 id="modal-title">İzinleri Yönet</h3>
+            <button id="close-modal-btn" class="modal-close-btn">&times;</button>
+        </div>
+        <div class="modal-body">
+            <p><strong>Çalışan:</strong> <span id="modal-employee-name"></span></p>
+            <input type="hidden" id="modal-user-id">
+            <div class="permissions-grid">
+                <div class="permission-item"><label for="perm-can_make_sale"><input type="checkbox" id="perm-can_make_sale" name="can_make_sale"><span>Satış Yapma</span></label></div>
+                <div class="permission-item"><label for="perm-can_view_sales_history"><input type="checkbox" id="perm-can_view_sales_history" name="can_view_sales_history"><span>Satış Geçmişi</span></label></div>
+                <div class="permission-item"><label for="perm-can_view_statistics"><input type="checkbox" id="perm-can_view_statistics" name="can_view_statistics"><span>İstatistikler</span></label></div>
+                <div class="permission-item"><label for="perm-can_generate_reports"><input type="checkbox" id="perm-can_generate_reports" name="can_generate_reports"><span>Rapor İndirme</span></label></div>
+                <div class="permission-item"><label for="perm-can_add_product"><input type="checkbox" id="perm-can_add_product" name="can_add_product"><span>Ürün Ekleme</span></label></div>
+                <div class="permission-item"><label for="perm-can_edit_product"><input type="checkbox" id="perm-can_edit_product" name="can_edit_product"><span>Ürün Düzenleme</span></label></div>
+                <div class="permission-item"><label for="perm-can_delete_product"><input type="checkbox" id="perm-can_delete_product" name="can_delete_product"><span>Ürün Silme</span></label></div>
+                <div class="permission-item"><label for="perm-can_manage_employees"><input type="checkbox" id="perm-can_manage_employees" name="can_manage_employees"><span>Çalışan Yönetimi</span></label></div>
+                <div class="permission-item"><label for="perm-can_manage_attributes"><input type="checkbox" id="perm-can_manage_attributes" name="can_manage_attributes"><span>Nitelik Yönetimi</span></label></div>
+                <div class="permission-item"><label for="perm-can_manage_customers"><input type="checkbox" id="perm-can_manage_customers" name="can_manage_customers"><span>Müşteri Yönetimi</span></label></div>
+                <div class="permission-item"><label for="perm-can_manage_debts"><input type="checkbox" id="perm-can_manage_debts" name="can_manage_debts"><span>Borç/Tahsilat Yönetimi</span></label></div>
+                <div class="permission-item"><label for="perm-can_orders"><input type="checkbox" id="perm-can_orders" name="can_orders"><span>Sipariş Yönetimi</span></label></div>
+            </div>
+        </div>
+        <div class="modal-footer">
+            <button id="save-permissions-btn" class="btn btn-primary">Değişiklikleri Kaydet</button>
+        </div>
+    </div>
+  </div>
+
+  <!-- MESAJ GÖNDERME MODALI (BAĞIMSIZ) -->
+  <div id="message-modal" class="modal-overlay hidden">
+    <div class="modal-content message-modal-style">
+        <div class="modal-header">
+            <h3><i class="ri-mail-send-line"></i> Mesaj Gönder</h3>
+            <button id="close-message-modal-btn" class="modal-close-btn">&times;</button>
+        </div>
+        
+        <div class="modal-body">
+            <div class="recipient-info">
+                <span class="label">Alıcı:</span>
+                <span id="msg-employee-name" class="value"></span>
+            </div>
+            <input type="hidden" id="msg-user-id">
+            
+            <div class="form-group">
+                <label for="msg-title">Konu</label>
+                <input type="text" id="msg-title" placeholder="Örn: Haftalık Toplantı" class="modern-input">
+            </div>
+            
+            <div class="form-group">
+                <label for="msg-type">Önem Derecesi</label>
+                <div class="select-wrapper">
+                    <select id="msg-type" class="modern-select">
+                        <option value="info">Bilgi (Mavi)</option>
+                        <option value="success">Tebrik (Yeşil)</option>
+                        <option value="warning">Uyarı (Sarı)</option>
+                        <option value="error">Acil / Kritik (Kırmızı)</option>
+                    </select>
+                    <i class="ri-arrow-down-s-line"></i>
+                </div>
+            </div>
+
+            <div class="form-group">
+                <label for="msg-content">Mesaj İçeriği</label>
+                <textarea id="msg-content" rows="5" placeholder="Mesajınızı buraya yazın..." class="modern-textarea"></textarea>
+            </div>
+        </div>
+        
+        <div class="modal-footer">
+            <button id="send-message-btn" class="btn btn-primary full-width-btn">
+                <i class="ri-send-plane-fill"></i> Gönder
+            </button>
+        </div>
+    </div>
+  </div>
+
+  <script src="https://cdn.jsdelivr.net/npm/chart.js"></script>
+  <script src="{{ url_for('static', filename='js/manager.js') }}"></script>
+  <script src="{{ url_for('static', filename='js/ai_chat.js') }}"></script> 
+</body>
+</html>

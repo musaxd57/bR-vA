@@ -1,0 +1,66 @@
+<!DOCTYPE html>
+<html lang="tr">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>envaner | Müşteri Yönetimi</title>
+    <link rel="stylesheet" href="{{ url_for('static', filename='definitions.css') }}">
+    <link rel="stylesheet" href="{{ url_for('static', filename='sidebar.css') }}">
+    <link href="https://cdn.jsdelivr.net/npm/remixicon@4.2.0/fonts/remixicon.css" rel="stylesheet">
+</head>
+<body>
+{% include "sidebar.html" %}
+
+<main class="main-container">
+    <div class="content-wrapper">
+        <section class="card newmusteripnl">
+            <header class="card-header">
+                <h2 class="card-title"><i class="ri-user-add-line"></i>Yeni Müşteri Ekle</h2>
+            </header>
+            <div class="card-body">
+                <form id="savenewcustomer">
+                    <input type="hidden" id="inputbolum" name="secret" value="18">
+                    <div class="form-group">
+                        <label for="savecustomername">Ad Soyad / Firma</label>
+                        <input id="savecustomername" type="text" placeholder="Müşteri adını giriniz" required name="name">
+                    </div>
+                    <div class="form-group">
+                        <label for="phone">Telefon Numarası</label>
+                        <input type="tel" id="phone" placeholder="5XX XXX XX XX" maxlength="20" required name="tel">
+                    </div>
+                    <div class="form-actions">
+                        <button type="submit" id="b89k07" class="btn btn-primary">Ekle</button>
+                    </div>
+                    <div id="formStatus" aria-live="polite"></div>
+                </form>
+            </div>
+        </section>
+
+        <section class="card" id="customerlist">
+            <header class="card-header">
+                <h3 class="card-title"><i class="ri-list-check"></i>Kayıtlı Müşteriler</h3>
+            </header>
+            <div class="card-body">
+                <div class="table-wrapper">
+                    <table id="customer_table">
+                        <thead>
+                            <tr>
+                                <th>Ad Soyad / Firma</th>
+                                <th>Telefon No</th>
+                                <th>İşlemler</th>
+                            </tr>
+                        </thead>
+                        <tbody><!-- JS ile doldurulacak --></tbody>
+                    </table>
+                </div>
+            </div>
+        </section>
+    </div>
+</main>
+
+<script src="{{ url_for('static', filename='js/addcustomer.js') }}"></script>
+<script>
+    document.getElementById("phone")?.addEventListener("input",function(e){let t=this.value.replace(/\D/g,"");t.startsWith("0")&&(t=t.substring(1));let l="";t.length>0&&(l=t.substring(0,3)),t.length>3&&(l+=" "+t.substring(3,6)),t.length>6&&(l+=" "+t.substring(6,8)),t.length>8&&(l+=" "+t.substring(8,10)),this.value=l});
+</script>
+</body>
+</html>

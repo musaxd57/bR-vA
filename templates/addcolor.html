@@ -1,0 +1,58 @@
+<!DOCTYPE html>
+<html lang="tr">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>envaner | Renk Yönetimi</title> 
+    <link rel="stylesheet" href="{{ url_for('static', filename='definitions.css') }}">
+    <link rel="stylesheet" href="{{ url_for('static', filename='sidebar.css') }}">
+    <link href="https://cdn.jsdelivr.net/npm/remixicon@4.2.0/fonts/remixicon.css" rel="stylesheet">
+</head>
+<body>
+{% include "sidebar.html" %}
+
+<main class="main-container">
+    <div class="content-wrapper">
+        <section id="colorslct" class="card">
+            <header class="card-header">
+                <h2 class="card-title"><i class="ri-palette-line"></i>Renk Ekleme</h2>
+            </header>
+            <div class="card-body">
+                <form id="colorForm">
+                    <div class="form-group">
+                        <label for="colorInput">Renk Adı</label>
+                        <input type="text" id="colorInput" placeholder="Örn: Kırmızı" required>
+                    </div>
+                    <div class="form-actions">
+                        <button id="clearb" type="reset" class="btn btn-secondary">Temizle</button>
+                        <button id="confirmb" type="button" class="btn btn-primary">Onayla</button>
+                    </div>
+                </form>
+            </div>
+        </section>
+
+        <section id="resultDiv" class="card">
+            <header class="card-header">
+                <h3 class="card-title" id="savedclr"><i class="ri-list-check"></i>Kaydedilen Renkler</h3>
+            </header>
+            <div class="card-body">
+                <div class="table-wrapper">
+                    <table id="colors_table">
+                        <thead>
+                            <tr>
+                                <th>Renk Kodu</th>
+                                <th>Renk İsmi</th>
+                                <th>İşlemler</th>
+                            </tr>
+                        </thead>
+                        <tbody><!-- JS ile doldurulacak --></tbody>
+                    </table>
+                </div>
+            </div>
+        </section>
+    </div>
+</main>
+
+<script src="{{ url_for('static', filename='js/addcolor.js') }}"></script> 
+</body>
+</html>

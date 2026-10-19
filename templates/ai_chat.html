@@ -1,0 +1,47 @@
+<!-- 1. Markdown Kütüphanesi (AI cevaplarını, tabloları düzgün göstermek için gerekli) -->
+<script src="https://cdn.jsdelivr.net/npm/marked/marked.min.js"></script>
+
+<!-- 2. ANA KAPSAYICI (Tüm CSS bu ID'ye bağlı çalışır, çakışmayı önler) -->
+<div id="ai-widget-container">
+
+    <!-- SOHBET PENCERESİ -->
+    <div id="ai-chat-window" class="ai-chat-window hidden">
+        
+        <!-- Üst Başlık (Header) -->
+        <div class="ai-chat-header">
+            <div class="ai-header-title">
+                <!-- RemixIcon kullanıyoruz -->
+                <i class="ri-robot-2-fill"></i>
+                <span>StokTika Asistan</span>
+            </div>
+            <button id="close-ai-btn" class="ai-header-btn" title="Pencereyi Kapat">
+                <i class="ri-close-line"></i>
+            </button>
+        </div>
+        
+        <!-- Mesajların Listelendiği Alan -->
+        <div id="ai-chat-messages" class="ai-chat-messages">
+            <!-- Varsayılan Karşılama Mesajı -->
+            <div class="message ai-message">
+                <div class="message-content">
+                    Merhaba! 👋 Ben StokTika Asistanı.<br>
+                    Stok yönetimi, satış analizi veya raf işlemleriyle ilgili size nasıl yardımcı olabilirim? 🚀
+                </div>
+            </div>
+        </div>
+
+        <!-- Mesaj Yazma Alanı (Input) -->
+        <div class="ai-chat-input-area">
+            <input type="text" id="ai-user-input" placeholder="Bir şeyler sorun... (Örn: Stokta ne var?)" autocomplete="off">
+            <button id="ai-send-btn" title="Gönder">
+                <i class="ri-send-plane-fill"></i>
+            </button>
+        </div>
+    </div>
+
+    <!-- YUVARLAK AÇMA BUTONU (Floating Action Button) -->
+    <button id="ai-toggle-btn" class="ai-toggle-btn" title="AI Asistanı Aç">
+        <i class="ri-sparkling-2-fill"></i>
+    </button>
+
+</div>

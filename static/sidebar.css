@@ -1,0 +1,347 @@
+/* /static/sidebar.css - NİHAİ SÜRÜM */
+
+:root {
+    --sidebar-bg: #1F2937; /* Modern, koyu antrasit */
+    --sidebar-link-bg: #374151;
+    --sidebar-link-hover: #4B5563;
+    --sidebar-text-color: #F9FAFB; /* Hafif kırık beyaz */
+    --accent-color: #3B82F6; /* Diğer sayfalarla tutarlı mavi */
+    --sidebar-width: 260px;
+    --logout-bg: #4B5563;
+    --logout-hover-bg: #EF4444; /* Vurgulu kırmızı */
+    --border-colorsb: #4B5563;
+    --transition-speed: 0.3s;
+    --radius-md: 6px;
+}
+
+body {
+    margin: 0 !important;
+    font-family: 'Inter', sans-serif; /* Diğer sayfalarla tutarlı font */
+    transition: padding-left var(--transition-speed) ease;
+}
+
+/* --- Ana Sidebar Yapısı --- */
+.sidebar {
+    width: var(--sidebar-width);
+    height: 100vh;
+    position: fixed;
+    top: 0;
+    left: 0;
+    background-color: var(--sidebar-bg);
+    color: var(--sidebar-text-color);
+    padding: 1.5rem 1rem;
+    display: flex;
+    flex-direction: column;
+    z-index: 1000;
+    border-right: 1px solid var(--border-colorsb);
+    transform: translateX(calc(-1 * var(--sidebar-width)));
+    transition: transform var(--transition-speed) ease;
+}
+
+body.sidebar-open .sidebar {
+    transform: translateX(0);
+}
+
+/* --- Sidebar İçeriği --- */
+.sidebar-header {
+    text-align: center;
+    padding: 0 1rem;
+}
+
+.logo {
+    font-family: 'Georgia', serif;
+    font-weight: normal;
+    font-size: 2.5rem;
+    color: var(--sidebar-text-color);
+    letter-spacing: 1px;
+}
+
+.sidebar hr {
+    border: none;
+    height: 1px;
+    background-color: var(--border-colorsb);
+    width: 100%;
+    margin: 1.5rem 0;
+}
+
+.sidebar-nav {
+    display: flex;
+    flex-direction: column;
+    gap: 0.5rem;
+    flex-grow: 1; /* Navigasyonun kalan alanı doldurmasını sağlar */
+}
+
+/* --- Menü Elemanları ve Akordiyon --- */
+.sidebar-item a {
+    display: flex;
+    align-items: center;
+    justify-content: space-between;
+    padding: 0.8rem 1rem;
+    border-radius: var(--radius-md);
+    color: var(--sidebar-text-color);
+    text-decoration: none;
+    font-weight: 500;
+    transition: background-color 0.2s ease, color 0.2s ease;
+    border-left: 3px solid transparent; /* Aktif durum için hazırlık */
+}
+
+.menu-item-content {
+    display: flex;
+    align-items: center;
+    gap: 0.75rem;
+}
+
+.menu-item-content i {
+    font-size: 1.2rem;
+}
+
+.sidebar-item a:hover {
+    background-color: var(--sidebar-link-hover);
+}
+
+/* Aktif (açık) menü başlığı */
+.sidebar-dropdown-toggle.active {
+    background-color: var(--sidebar-link-bg);
+    border-left-color: var(--accent-color);
+    color: #fff;
+}
+
+.arrow-icon {
+    transition: transform var(--transition-speed) ease;
+}
+
+.sidebar-dropdown-toggle.active .arrow-icon {
+    transform: rotate(180deg);
+}
+
+.sidebar-submenu {
+    max-height: 0;
+    overflow: hidden;
+    transition: max-height 0.4s ease-out, padding 0.4s ease-out;
+    padding: 0 0.5rem;
+}
+
+/* Alt menü linkleri */
+.sidebar-submenu a {
+    font-size: 0.9rem;
+    padding: 0.7rem 1rem 0.7rem 2.75rem; /* Sola dayalı ikon boşluğu */
+    position: relative;
+    border-left: none; /* Alt menülerde kenarlık olmasın */
+}
+
+.sidebar-submenu a::before {
+    content: '';
+    position: absolute;
+    left: 1.75rem;
+    top: 50%;
+    transform: translateY(-50%);
+    width: 4px;
+    height: 4px;
+    border-radius: 50%;
+    background-color: #9CA3AF;
+}
+
+/* --- Alt Kısım (Footer) --- */
+.sidebar-footer {
+    padding: 0 0.5rem;
+}
+
+.contact-info {
+    font-size: 0.85rem;
+    color: #9CA3AF;
+}
+
+.contact-info .contact-number {
+    display: flex;
+    align-items: center;
+    gap: 0.5rem;
+    margin-top: 0.5rem;
+    color: var(--sidebar-text-color);
+}
+
+.contact-info .fa-whatsapp {
+    color: #25D366;
+}
+
+.logout-section {
+    margin-top: 1.5rem;
+}
+
+.logout-link {
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    gap: 0.5rem;
+    width: 100%;
+    background-color: var(--logout-bg);
+    color: var(--sidebar-text-color);
+    text-align: center;
+    padding: 0.75rem 1rem;
+    border-radius: var(--radius-md);
+    font-weight: 600;
+    text-decoration: none;
+    transition: background-color 0.2s ease;
+}
+
+.logout-link:hover {
+    background-color: var(--logout-hover-bg);
+    color: #fff;
+}
+
+/* --- Aç/Kapa Butonu --- */
+.sidebar-toggle-btn {
+    position: fixed;
+    top: 1rem;
+    left: 1rem;
+    z-index: 1001;
+    background-color: var(--sidebar-bg);
+    color: var(--sidebar-text-color);
+    border: 1px solid var(--border-colorsb);
+    border-radius: var(--radius-md);
+    cursor: pointer;
+    width: 45px;
+    height: 45px;
+    font-size: 1.2rem;
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    transition: left var(--transition-speed) ease, transform 0.2s ease;
+}
+.sidebar-toggle-btn:hover {
+    transform: scale(1.1);
+}
+
+/* --- Dinamik İçerik Alanı --- */
+/* Bu sınıfları ana içerik kapsayıcılarınıza (main-container) ekleyebilirsiniz */
+.main-content {
+    padding: 2rem;
+    transition: padding-left var(--transition-speed) ease;
+}
+
+/* Büyük ekranlarda (PC, Laptop) */
+@media (min-width: 769px) {
+    body.sidebar-open {
+        padding-left: var(--sidebar-width);
+    }
+
+    body.sidebar-open .sidebar-toggle-btn {
+        /* Butonu sidebar'ın hemen yanına taşı */
+        left: calc(var(--sidebar-width) + 1rem);
+    }
+}
+
+/* Küçük ekranlarda (Tablet, Telefon) */
+@media (max-width: 768px) {
+    /* Menü, içeriği ittirmek yerine üzerine gelir */
+    body.sidebar-open .main-container {
+        padding-left: 2rem; /* Orijinal padding kalsın */
+    }
+
+    body.sidebar-open .sidebar-toggle-btn {
+        left: 1rem; /* Buton yerinde kalsın */
+    }
+}
+/* /static/sidebar.css dosyasına ekleyin veya güncelleyin */
+
+/* ... Mevcut kodların devamı ... */
+
+/* --- Aç/Kapa Butonu (Güncelleme: position relative eklendi) --- */
+.sidebar-toggle-btn {
+    position: fixed; /* Mevcut */
+    /* ... diğer stiller ... */
+    /* YENİ: İçindeki mutlak konumlu nokta için referans noktası */
+    /* Zaten fixed olduğu için child absolute ona göre konumlanır ama garanti olsun */
+}
+
+/* --- YENİ: Toggle Butonundaki Kırmızı Nokta --- */
+.notification-dot {
+    position: absolute;
+    top: 8px;
+    right: 8px;
+    width: 10px;
+    height: 10px;
+    background-color: #EF4444; /* Kırmızı */
+    border-radius: 50%;
+    border: 2px solid var(--sidebar-bg); /* Arka plan rengiyle sınır oluşturarak belirginleştirme */
+    box-shadow: 0 0 0 1px rgba(0,0,0,0.1);
+    z-index: 1002;
+    animation: pulse-dot 2s infinite;
+}
+
+/* --- YENİ: Menüdeki Bildirim Sayısı (Badge) --- */
+.notification-badge {
+    background-color: #EF4444; /* Kırmızı */
+    color: white;
+    font-size: 0.75rem;
+    font-weight: 700;
+    padding: 2px 8px;
+    border-radius: 12px;
+    min-width: 20px;
+    text-align: center;
+    margin-left: auto; /* Sağa yasla */
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    transition: transform 0.2s ease;
+}
+
+/* Opsiyonel: Nokta için yanıp sönme animasyonu */
+@keyframes pulse-dot {
+    0% { transform: scale(0.95); box-shadow: 0 0 0 0 rgba(239, 68, 68, 0.7); }
+    70% { transform: scale(1); box-shadow: 0 0 0 6px rgba(239, 68, 68, 0); }
+    100% { transform: scale(0.95); box-shadow: 0 0 0 0 rgba(239, 68, 68, 0); }
+}
+.sidebar {
+    width: var(--sidebar-width);
+    height: 100vh;
+    position: fixed;
+    top: 0;
+    left: 0;
+    background-color: var(--sidebar-bg);
+    color: var(--sidebar-text-color);
+    padding: 1.5rem 1rem;
+    display: flex;
+    flex-direction: column;
+    z-index: 1000;
+    border-right: 1px solid var(--border-colorsb);
+    transform: translateX(calc(-1 * var(--sidebar-width)));
+    transition: transform var(--transition-speed) ease;
+    
+    /* YENİ: Dışarı taşanları gizle, iç kısım kayacak */
+    overflow: hidden; 
+}
+.sidebar-nav {
+    display: flex;
+    flex-direction: column;
+    gap: 0.5rem;
+    flex-grow: 1; /* Kalan boşluğu doldurur */
+    
+    /* YENİ: Kaydırma özellikleri */
+    overflow-y: auto; 
+    overflow-x: hidden;
+    padding-right: 5px; /* Kaydırma çubuğu içeriğe binmesin diye */
+}
+
+/* Şık bir kaydırma çubuğu (Scrollbar) tasarımı */
+.sidebar-nav::-webkit-scrollbar {
+    width: 5px;
+}
+
+.sidebar-nav::-webkit-scrollbar-track {
+    background: transparent;
+}
+
+.sidebar-nav::-webkit-scrollbar-thumb {
+    background: var(--sidebar-link-hover);
+    border-radius: 10px;
+}
+
+.sidebar-nav::-webkit-scrollbar-thumb:hover {
+    background: var(--accent-color);
+}
+.sidebar-submenu {
+    max-height: 0;
+    overflow: hidden;
+    transition: max-height 0.4s ease-out; /* padding geçişini silebilirsiniz, daha akıcı olur */
+    padding: 0 0.5rem;
+}

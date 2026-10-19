@@ -1,0 +1,3 @@
+# Opsiyonel modül; ağ/API davranışı bu paketin yerel testlerine dahil değildir.
+# Etkinleştirme öncesinde sürüm sabitleme ve araç yetkileri ayrıca tamamlanmalı.
+groq

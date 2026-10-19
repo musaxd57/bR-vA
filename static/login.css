@@ -1,0 +1,185 @@
+/* /static/login.css */
+
+/* === KÖK DEĞİŞKENLER VE TEMEL AYARLAR (admin.css ile aynı) === */
+:root {
+  --bg-color: #111827;
+  --card-bg-color: rgba(31, 41, 55, 0.6);
+  --border-color: rgba(255, 255, 255, 0.1);
+  --text-primary: #F9FAFB;
+  --text-secondary: #9CA3AF;
+  --primary-color: #3B82F6;
+  --primary-hover: #2563EB;
+  --danger-color: #F87171; /* Hata mesajı için */
+  --focus-ring-color: rgba(59, 130, 246, 0.25);
+  --radius-md: 6px;
+  --radius-lg: 12px;
+  --font-family: 'Inter', sans-serif;
+}
+
+* {
+  margin: 0;
+  padding: 0;
+  box-sizing: border-box;
+}
+
+body {
+  font-family: var(--font-family);
+  background-color: var(--bg-color);
+  color: var(--text-primary);
+  line-height: 1.6;
+}
+
+.background-shapes {
+  position: fixed; top: 0; left: 0; width: 100%; height: 100%; z-index: -1;
+  background-image: 
+  radial-gradient(circle at 10% 20%, rgba(59, 130, 246, 0.1) 0%, transparent 25%),
+  radial-gradient(circle at 80% 90%, rgba(59, 130, 246, 0.1) 0%, transparent 25%);
+
+}
+
+/* === ANA YAPI === */
+.login-container {
+  display: flex;
+  justify-content: center;
+  align-items: center;
+  min-height: 100vh;
+  padding: 1rem;
+}
+
+/* === GİRİŞ KARTI (GLASSMORPHISM) === */
+.glass-card {
+  width: 100%;
+  max-width: 400px;
+  background: var(--card-bg-color);
+  border: 1px solid var(--border-color);
+  border-radius: var(--radius-lg);
+  padding: 2.5rem;
+  backdrop-filter: blur(10px);
+  -webkit-backdrop-filter: blur(10px);
+  animation: fadeIn 0.5s ease-out forwards;
+}
+
+@keyframes fadeIn {
+  from { opacity: 0; transform: translateY(20px); }
+  to { opacity: 1; transform: translateY(0); }
+}
+
+.card-header {
+  text-align: center;
+  margin-bottom: 2rem;
+}
+
+.logo {
+  font-family: 'Georgia', serif;
+  font-weight: normal;
+  font-size: 3rem;
+  color: var(--text-primary);
+  letter-spacing: 1px;
+}
+
+.subtitle {
+  color: var(--text-secondary);
+  margin-top: 0.5rem;
+}
+
+/* === FORM ELEMANLARI === */
+.form-group {
+  margin-bottom: 1.5rem;
+}
+
+.form-group label {
+  display: block;
+  font-weight: 500;
+  margin-bottom: 0.5rem;
+  color: var(--text-secondary);
+  font-size: 0.9rem;
+}
+
+.input-wrapper {
+  position: relative;
+}
+
+.input-wrapper i {
+  position: absolute;
+  left: 1rem;
+  top: 50%;
+  transform: translateY(-50%);
+  color: var(--text-secondary);
+  font-size: 1.2rem;
+}
+
+input[type="text"],
+input[type="password"] {
+  width: 100%;
+  padding: 0.75rem 1rem 0.75rem 3rem; /* İkon için sol boşluk */
+  border: 1px solid var(--border-color);
+  border-radius: var(--radius-md);
+  font-size: 1rem;
+  background-color: rgba(0, 0, 0, 0.2);
+  color: var(--text-primary);
+  transition: all 0.2s ease;
+}
+
+input::placeholder {
+  color: var(--text-secondary);
+}
+
+input:focus {
+  outline: none;
+  border-color: var(--primary-color);
+  box-shadow: 0 0 0 3px var(--focus-ring-color);
+}
+
+/* === GİRİŞ BUTONU === */
+.btn {
+  width: 100%;
+  padding: 0.8rem 1.5rem;
+  border-radius: var(--radius-md);
+  border: none;
+  cursor: pointer;
+  font-weight: 600;
+  font-size: 1rem;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  gap: 0.5rem;
+  transition: all 0.2s;
+}
+
+.btn-primary {
+  background-color: var(--primary-color);
+  color: #fff;
+}
+
+.btn-primary:hover {
+  background-color: var(--primary-hover);
+  transform: translateY(-2px);
+  box-shadow: 0 4px 15px rgba(59, 130, 246, 0.2);
+}
+
+.btn i {
+  transition: transform 0.3s ease;
+}
+
+.btn:hover i {
+  transform: translateX(4px);
+}
+
+/* === HATA MESAJI ALANI === */
+.error-message {
+  display: flex;
+  align-items: center;
+  gap: 0.75rem;
+  padding: 0.75rem 1rem;
+  margin-bottom: 1.5rem;
+  border-radius: var(--radius-md);
+  background-color: rgba(239, 68, 68, 0.1);
+  border: 1px solid rgba(239, 68, 68, 0.3);
+  color: var(--danger-color);
+  font-weight: 500;
+  font-size: 0.9rem;
+}
+
+.error-message i {
+  font-size: 1.2rem;
+}

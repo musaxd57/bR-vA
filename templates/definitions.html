@@ -1,0 +1,315 @@
+<!DOCTYPE html>
+<html lang="tr">
+<head>
+  <meta charset="UTF-8" />
+  <meta name="viewport" content="width=device-width, initial-scale=1" />
+  <title>envaner | Tanımlamalar</title>
+  <link rel="stylesheet" href="{{ url_for('static', filename='definitions.css') }}">
+  <link rel="stylesheet" href="{{ url_for('static', filename='sidebar.css') }}">
+  <link href="https://cdn.jsdelivr.net/npm/remixicon@4.2.0/fonts/remixicon.css" rel="stylesheet">
+</head>
+<body>
+{% include "sidebar.html" %}
+
+<main class="main-container">
+
+    <!-- SEKME NAVİGASYONU -->
+    <div class="tabs-navigation">
+      <a href="#" class="tab-link active" data-tab="renk-tanimlama"><i class="ri-palette-line"></i> Renk Tanımlama</a>
+      <a href="#" class="tab-link" data-tab="musteri-tanimlama"><i class="ri-user-add-line"></i> Müşteri Tanımlama</a>
+      <a href="#" class="tab-link" data-tab="raf-tanimlama"><i class="ri-database-2-line"></i> Raf Tanımlama</a>
+      <a href="#" class="tab-link" data-tab="kategori-tanimlama"><i class="ri-add-box-line"></i> Kategori Tanımlama</a>
+    </div>
+
+    <!-- SEKME İÇERİKLERİ -->
+    <div class="tabs-content">
+        
+        <div id="renk-tanimlama" class="tab-panel active">
+            <div class="zen-grid">
+                
+                <!-- SOL KOLON: EKLEME KARTI (Sticky/Sabit) -->
+                <div class="zen-card sticky-card">
+                    <div class="card-head">
+                        <div class="icon-box">
+                            <i class="ri-palette-fill"></i>
+                        </div>
+                        <div>
+                            <h3>Renk Ekle</h3>
+                            <p>Sisteme yeni bir renk varyasyonu tanımlayın.</p>
+                        </div>
+                    </div>
+                    
+                    <form id="colorForm" class="zen-form">
+                        <div class="zen-group">
+                            <label for="colorInput">RENK ADI</label>
+                            <input type="text" id="colorInput" class="zen-input" placeholder="Örn: Antrasit" required>
+                        </div>
+                        <div class="zen-group">
+                            <label for="colorCodeInput">RENK KODU (Barkod için)</label>
+                            <input type="text" id="colorCodeInput" class="zen-input" placeholder="Örn: ANT" maxlength="5" required style="text-transform:uppercase;">
+                        </div>
+                        
+                        <div class="zen-actions">
+                            <!-- Temizle butonu JS'de tanımlı ama minimalist tasarımda genelde gerekmez. 
+                                Yine de işlev bozulmasın diye gizli veya küçük tutabiliriz. -->
+                            <button id="clearb" type="reset" class="zen-btn ghost" title="Temizle">
+                                <i class="ri-eraser-line"></i>
+                            </button>
+                            
+                            <button id="confirmb" type="button" class="zen-btn primary full-width">
+                                <span>Kaydet</span>
+                                <i class="ri-arrow-right-line"></i>
+                            </button>
+                        </div>
+                    </form>
+                </div>
+
+                <!-- SAĞ KOLON: LİSTE -->
+                <div class="zen-card">
+                    <div class="card-head border-bottom">
+                        <h3>Kayıtlı Renkler</h3>
+                        <span class="badge-soft">Aktif Liste</span>
+                    </div>
+                    
+                    <div class="table-responsive">
+                        <table id="colors_table" class="zen-table">
+                            <thead>
+                                <tr>
+                                    <th width="20%">KOD</th>
+                                    <th width="60%">RENK ADI</th>
+                                    <th width="20%" class="text-right">İŞLEM</th>
+                                </tr>
+                            </thead>
+                            <tbody>
+                                <!-- JS burayı dolduracak -->
+                            </tbody>
+                        </table>
+                    </div>
+                </div>
+
+            </div>
+        </div>
+
+        <div id="musteri-tanimlama" class="tab-panel">
+            <div class="zen-grid">
+                
+                <!-- SOL KOLON: MÜŞTERİ KAYIT FORMU (Sticky) -->
+                <div class="zen-card sticky-card">
+                    <div class="card-head">
+                        <div class="icon-box">
+                            <i class="ri-user-add-line"></i>
+                        </div>
+                        <div>
+                            <h3>Müşteri Kaydı</h3>
+                            <p>Rehbere yeni bir cari hesap/kişi ekleyin.</p>
+                        </div>
+                    </div>
+
+                    <form id="savenewcustomer" class="zen-form">
+                        <!-- Gizli input (Mevcut yapıyı korumak için) -->
+                        <input type="hidden" id="inputbolum" name="secret" value="18">
+
+                        <div class="zen-group">
+                            <label for="savecustomername">AD SOYAD / FİRMA</label>
+                            <div class="input-wrapper">
+                                <input id="savecustomername" type="text" class="zen-input" placeholder="Müşteri Adı Giriniz" required name="name" autocomplete="off">
+                                <i class="ri-user-smile-line input-icon"></i>
+                            </div>
+                        </div>
+
+                        <div class="zen-group">
+                            <label for="phone">TELEFON NUMARASI</label>
+                            <div class="input-wrapper">
+                                <input type="tel" id="phone" class="zen-input" placeholder="5XX XXX XX XX" maxlength="20" required name="tel" autocomplete="off">
+                                <i class="ri-phone-line input-icon"></i>
+                            </div>
+                        </div>
+
+                        <div class="zen-actions">
+                            <button type="submit" id="b89k07" class="zen-btn primary full-width">
+                                <span>Kaydet</span>
+                                <i class="ri-save-3-line"></i>
+                            </button>
+                        </div>
+
+                        <!-- Durum Mesajı Alanı -->
+                        <div id="customerFormStatus" style="margin-top:15px; font-size:0.9rem; font-weight:500; text-align:center;" aria-live="polite"></div>
+                    </form>
+                </div>
+
+                <!-- SAĞ KOLON: MÜŞTERİ LİSTESİ -->
+                <div class="zen-card">
+                    <div class="card-head border-bottom">
+                        <h3>Kayıtlı Müşteriler</h3>
+                        <span class="badge-soft">Rehber</span>
+                    </div>
+
+                    <div class="table-responsive">
+                        <table id="customer_table" class="zen-table">
+                            <thead>
+                                <tr>
+                                    <th width="40%">AD SOYAD / FİRMA</th>
+                                    <th width="40%">TELEFON</th>
+                                    <th width="20%" class="text-right">İŞLEM</th>
+                                </tr>
+                            </thead>
+                            <tbody>
+                                <!-- JS tarafından doldurulacak -->
+                            </tbody>
+                        </table>
+                    </div>
+                </div>
+
+            </div>
+        </div>
+
+        <div id="raf-tanimlama" class="tab-panel">
+            <div class="zen-grid">
+                
+                <!-- SOL KOLON: RAF EKLEME FORMU (Sticky) -->
+                <div class="zen-card sticky-card">
+                    <div class="card-head">
+                        <div class="icon-box">
+                            <i class="ri-archive-drawer-line"></i>
+                        </div>
+                        <div>
+                            <h3>Raf Tanımla</h3>
+                            <p>Depo düzeni için konum/raf kodları oluşturun.</p>
+                        </div>
+                    </div>
+                    
+                    <form id="shelfForm" class="zen-form">
+                        <div class="zen-group">
+                            <label for="newShelf">RAF KODU</label>
+                            <div class="input-wrapper">
+                                <input type="text" id="newShelf" class="zen-input" placeholder="Örn: A-12-B" required autocomplete="off">
+                                <i class="ri-hashtag input-icon"></i>
+                            </div>
+                        </div>
+
+                        <div class="zen-actions">
+                            <button type="submit" class="zen-btn primary full-width">
+                                <span>Kaydet</span>
+                                <i class="ri-layout-grid-fill"></i>
+                            </button>
+                        </div>
+                    </form>
+                </div>
+
+                <!-- SAĞ KOLON: RAF LİSTESİ -->
+                <div class="zen-card">
+                    <div class="card-head border-bottom">
+                        <h3>Depo Rafları</h3>
+                        <span class="badge-soft">Konumlar</span>
+                    </div>
+                    
+                    <div class="table-responsive">
+                        <table id="shelves_table" class="zen-table">
+                            <thead>
+                                <tr>
+                                    <th width="80%">RAF KODU</th>
+                                    <th width="20%" class="text-right">İŞLEM</th>
+                                </tr>
+                            </thead>
+                            <tbody>
+                                <!-- JS tarafından doldurulacak -->
+                            </tbody>
+                        </table>
+                    </div>
+                </div>
+
+            </div>
+        </div>
+
+        <div id="kategori-tanimlama" class="tab-panel">
+            <div class="zen-grid">
+                
+                <!-- SOL KOLON: KATEGORİ OLUŞTURMA FORMU (Sticky) -->
+                <div class="zen-card sticky-card">
+                    <div class="card-head">
+                        <div class="icon-box">
+                            <i class="ri-shirt-line"></i>
+                        </div>
+                        <div>
+                            <h3>Kategori & Beden</h3>
+                            <p>Ürün gruplarını ve beden setlerini yönetin.</p>
+                        </div>
+                    </div>
+                    
+                    <form id="categoryForm" autocomplete="off" class="zen-form">
+                        
+                        <!-- Kategori Adı -->
+                        <div class="zen-group">
+                            <label for="categoryName">KATEGORİ ADI</label>
+                            <div class="input-wrapper">
+                                <input id="categoryName" type="text" class="zen-input" placeholder="Örn: Pantolon" required>
+                                <i class="ri-price-tag-3-line input-icon"></i>
+                            </div>
+                        </div>
+
+                        <!-- Beden Ekleme Alanı (Input + Buton) -->
+                        <div class="zen-group">
+                            <label for="sizeInput">BEDEN EKLE (ENTER)</label>
+                            <div class="input-with-action">
+                                <input id="sizeInput" type="text" class="zen-input" placeholder="Örn: XL, 42">
+                                <button id="addSizeBtn" type="button" class="action-btn" title="Listeye Ekle">
+                                    <i class="ri-add-line"></i>
+                                </button>
+                            </div>
+                        </div>
+
+                        <!-- Eklenen Bedenler (Chips) -->
+                        <div class="chips-area">
+                            <span class="chips-label">OLUŞTURULACAK SERİ:</span>
+                            <div id="sizeListContainer">
+                                <span id="emptyHint" class="hint-text">Henüz beden eklenmedi.</span>
+                                <ul id="sizeList" class="chip-list">
+                                    <!-- JS ile dolacak -->
+                                </ul>
+                            </div>
+                        </div>
+
+                        <!-- Kaydet Butonu -->
+                        <div class="zen-actions" style="margin-top: 20px;">
+                            <button id="submitBtn" type="submit" class="zen-btn primary full-width">
+                                <span>Kategoriyi Oluştur</span>
+                                <i class="ri-check-double-line"></i>
+                            </button>
+                        </div>
+                        
+                        <p id="categoryFormStatus" style="margin-top:10px; font-size:0.85rem; text-align:center;" role="status" aria-live="polite"></p>
+                    </form>
+                </div>
+
+                <!-- SAĞ KOLON: KATEGORİ LİSTESİ -->
+                <div class="zen-card">
+                    <div class="card-head border-bottom">
+                        <h3>Mevcut Kategoriler</h3>
+                        <span class="badge-soft">Gruplar</span>
+                    </div>
+                    
+                    <div class="table-responsive">
+                        <table id="categories_table" class="zen-table">
+                            <thead>
+                                <tr>
+                                    <th width="30%">KATEGORİ</th>
+                                    <th width="50%">BEDENLER</th>
+                                    <th width="20%" class="text-right">İŞLEM</th>
+                                </tr>
+                            </thead>
+                            <tbody>
+                                <!-- JS tarafından doldurulacak -->
+                            </tbody>
+                        </table>
+                    </div>
+                </div>
+
+            </div>
+        </div>
+
+    </div><!-- .tabs-content sonu -->
+</main>
+
+<script src="{{ url_for('static', filename='js/definitions.js') }}"></script> 
+</body>
+</html>

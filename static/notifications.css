@@ -1,0 +1,230 @@
+/* /static/notifications.css */
+
+/* === TEMEL AYARLAR (profile.css ile aynı) === */
+:root {
+  --bg-color: #F9FAFB;
+  --card-bg-color: #FFFFFF;
+  --border-color: #E5E7EB;
+  --text-primary: #1F2937;
+  --text-secondary: #6B7280;
+  --primary-color: #3B82F6;
+  --primary-hover: #2563EB;
+  --danger-color: #EF4444;
+  --success-color: #10B981;
+  --warning-color: #F59E0B;
+  --focus-ring-color: rgba(59, 130, 246, 0.25);
+  --radius-md: 6px;
+  --radius-lg: 12px;
+  --shadow-sm: 0 1px 2px 0 rgba(0, 0, 0, 0.05);
+}
+
+* { box-sizing: border-box; margin: 0; padding: 0; }
+
+body {
+  font-family: 'Inter', sans-serif;
+  background-color: var(--bg-color);
+  color: var(--text-primary);
+  display: flex; /* Sidebar yapısı için önemli */
+}
+
+/* === ANA YAPI === */
+.main-container {
+  flex-grow: 1;
+  padding: 2rem;
+}
+
+/* Profil sayfasındaki gibi tek büyük kart */
+.card {
+  background-color: var(--card-bg-color);
+  border: 1px solid var(--border-color);
+  border-radius: var(--radius-lg);
+  box-shadow: var(--shadow-sm);
+  max-width: 1000px;
+  margin: auto; /* Ortala */
+  overflow: hidden; /* Köşelerin düzgün görünmesi için */
+}
+
+.card-header {
+  padding: 1.5rem 2rem;
+  border-bottom: 1px solid var(--border-color);
+  display: flex;
+  justify-content: space-between;
+  align-items: center;
+  flex-wrap: wrap;
+  gap: 1rem;
+}
+
+.header-left .card-title {
+  font-size: 1.5rem;
+  font-weight: 700;
+  display: flex;
+  align-items: center;
+  gap: 0.75rem;
+  margin-bottom: 0.25rem;
+}
+.card-title i { color: var(--primary-color); }
+
+.header-left p {
+  font-size: 0.95rem;
+  color: var(--text-secondary);
+}
+
+/* === BUTON STİLLERİ === */
+.btn-action {
+  background-color: #fff;
+  border: 1px solid var(--border-color);
+  color: var(--text-primary);
+  padding: 0.6rem 1rem;
+  border-radius: var(--radius-md);
+  font-weight: 500;
+  cursor: pointer;
+  display: flex;
+  align-items: center;
+  gap: 0.5rem;
+  transition: all 0.2s;
+  font-family: 'Inter', sans-serif;
+}
+
+.btn-action:hover {
+  background-color: #f3f4f6;
+  border-color: #9ca3af;
+}
+
+/* === BİLDİRİM LİSTESİ === */
+.notification-list {
+  display: flex;
+  flex-direction: column;
+}
+
+/* Tekil Bildirim Satırı */
+.notification-item {
+  display: flex;
+  padding: 1.5rem 2rem;
+  border-bottom: 1px solid var(--border-color);
+  transition: background-color 0.2s;
+  position: relative;
+}
+
+.notification-item:last-child {
+  border-bottom: none;
+}
+
+.notification-item:hover {
+  background-color: #f9fafb;
+}
+
+/* Okunmamış Bildirim Farkı */
+.notification-item.unread {
+  background-color: #fff; /* Hafif bir ton farkı veya border ile belirtilebilir */
+}
+
+.notification-item.unread::before {
+  content: '';
+  position: absolute;
+  left: 0;
+  top: 0;
+  bottom: 0;
+  width: 4px;
+  background-color: var(--primary-color);
+}
+
+.notification-item.unread .notif-title {
+  font-weight: 700;
+  color: #000;
+}
+
+/* İkon Alanı */
+.notif-icon-box {
+  width: 40px;
+  height: 40px;
+  border-radius: 50%;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  font-size: 1.25rem;
+  margin-right: 1.5rem;
+  flex-shrink: 0;
+}
+
+/* Renkler */
+.notification-item.warning .notif-icon-box { background: #fffbeb; color: var(--warning-color); }
+.notification-item.success .notif-icon-box { background: #ecfdf5; color: var(--success-color); }
+.notification-item.error .notif-icon-box { background: #fef2f2; color: var(--danger-color); }
+.notification-item.info .notif-icon-box { background: #eff6ff; color: var(--primary-color); }
+
+/* İçerik */
+.notif-content {
+  flex-grow: 1;
+}
+
+.notif-header {
+  display: flex;
+  justify-content: space-between;
+  margin-bottom: 0.25rem;
+  flex-wrap: wrap;
+}
+
+.notif-title {
+  font-size: 1rem;
+  font-weight: 600;
+  color: var(--text-primary);
+}
+
+.notif-time {
+  font-size: 0.85rem;
+  color: var(--text-secondary);
+  display: flex;
+  align-items: center;
+  gap: 0.25rem;
+}
+
+.notif-message {
+  color: var(--text-secondary);
+  font-size: 0.95rem;
+  line-height: 1.5;
+}
+
+/* Aksiyonlar */
+.notif-actions {
+  display: flex;
+  align-items: center;
+  margin-left: 1rem;
+}
+
+.btn-icon {
+  background: none;
+  border: none;
+  cursor: pointer;
+  padding: 8px;
+  border-radius: 50%;
+  color: var(--text-secondary);
+  transition: all 0.2s;
+  font-size: 1.2rem;
+}
+
+.btn-icon:hover {
+  background-color: #f3f4f6;
+  color: var(--primary-color);
+}
+
+/* Boş Durum */
+.empty-state {
+  text-align: center;
+  padding: 4rem 2rem;
+  color: var(--text-secondary);
+}
+.empty-state i {
+  font-size: 3rem;
+  color: #d1d5db;
+  margin-bottom: 1rem;
+  display: block;
+}
+
+/* Mobil Uyumluluk */
+@media (max-width: 768px) {
+  .main-container { padding: 1rem; }
+  .card-header { flex-direction: column; align-items: flex-start; }
+  .btn-action { width: 100%; justify-content: center; }
+  .notification-item { padding: 1rem; }
+  .notif-icon-box { margin-right: 1rem; width: 32px; height: 32px; font-size: 1rem; }
+}

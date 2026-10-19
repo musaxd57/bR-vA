@@ -1,0 +1,77 @@
+<!DOCTYPE html>
+<html lang="tr">
+<head>
+  <meta charset="UTF-8" />
+  <meta name="viewport" content="width=device-width, initial-scale=1.0"/>
+  <title>envaner | Profil Yönetimi</title>
+  
+  <!-- Fontlar ve İkonlar -->
+  <link rel="preconnect" href="https://fonts.googleapis.com">
+  <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+  <link href="https://fonts.googleapis.com/css2?family=Inter:wght@400;500;600;700&display=swap" rel="stylesheet">
+  <link href="https://cdn.jsdelivr.net/npm/remixicon@4.2.0/fonts/remixicon.css" rel="stylesheet">
+  
+  <!-- CSS Dosyaları -->
+  <link rel="stylesheet" href="{{ url_for('static', filename='sidebar.css') }}">
+  <link rel="stylesheet" href="{{ url_for('static', filename='profile.css') }}">
+</head>
+<body>
+
+  <!-- Sidebar -->
+  {% include "sidebar.html" %}
+
+  <!-- Ana İçerik -->
+  <main class="main-container">
+    <section class="card" id="profile-management">
+      <div class="card-header">
+        <h2 class="card-title"><i class="ri-user-settings-line"></i>Profil Yönetimi</h2>
+        <p>Kullanıcı bilgilerinizi ve şifrenizi buradan güncelleyebilirsiniz.</p>
+      </div>
+
+      <div class="profile-container">
+        <!-- Profil Bilgileri Formu -->
+        <form id="profile-form" class="form-section">
+          <h3><i class="ri-user-line"></i>Kişisel Bilgiler</h3>
+          <div class="form-group">
+            <label for="username">Kullanıcı Adı</label>
+            <input id="username" name="username" type="text" required maxlength="20">
+          </div>
+          <div class="form-group">
+            <label for="phone">Telefon Numarası</label>
+            <input id="phone" name="phone" type="tel" placeholder="Örn: +90 555 123 4567">
+          </div>
+          <div class="form-actions">
+            <button type="submit" class="btn btn-primary">Bilgileri Güncelle</button>
+          </div>
+        </form>
+
+        <!-- Şifre Değiştirme Formu -->
+        <form id="password-form" class="form-section">
+          <h3><i class="ri-lock-password-line"></i>Şifreyi Değiştir</h3>
+          <div class="form-group">
+            <label for="current-password">Mevcut Şifre</label>
+            <input id="current-password" name="current_password" type="password" required autocomplete="current-password">
+          </div>
+          <div class="form-group">
+            <label for="new-password">Yeni Şifre</label>
+            <input id="new-password" name="new_password" type="password" required autocomplete="new-password">
+          </div>
+          <div class="form-group">
+            <label for="confirm-password">Yeni Şifre (Tekrar)</label>
+            <input id="confirm-password" name="confirm_password" type="password" required autocomplete="new-password">
+          </div>
+          <div class="form-actions">
+            <button type="submit" class="btn btn-primary">Şifreyi Değiştir</button>
+          </div>
+        </form>
+      </div>
+    </section>
+  </main>
+
+  <!-- Bildirim Alanı -->
+  <div id="toast" role="status" aria-live="polite"></div>
+
+  <!-- JavaScript Dosyası -->
+  <script src="{{ url_for('static', filename='js/profile.js') }}"></script>
+</body>
+</html>

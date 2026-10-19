@@ -1,0 +1,306 @@
+#ai-widget-container {
+    /* Konumlandırma */
+    position: fixed;
+    bottom: 30px;
+    right: 30px;
+    z-index: 2147483647; /* En üst katman */
+    
+    /* Font ve Tipografi Reset */
+    font-family: -apple-system, BlinkMacSystemFont, "Segoe UI", Roboto, Helvetica, Arial, sans-serif;
+    font-size: 14px;
+    line-height: 1.5;
+    color: #1f2937; /* Koyu Gri */
+    text-align: left;
+    
+    /* Düzen */
+    display: flex;
+    flex-direction: column;
+    align-items: flex-end;
+    gap: 15px;
+    
+    /* Etkileşim */
+    pointer-events: none; /* Kapsayıcı tıklamayı engellemesin */
+}
+
+/* Widget içindeki TÜM elementleri sıfırla */
+#ai-widget-container * {
+    box-sizing: border-box;
+    margin: 0;
+    padding: 0;
+    pointer-events: auto; /* İç elementler tıklanabilir */
+    font-family: inherit; /* Fontu kapsayıcıdan al */
+}
+
+/* ==========================================================================
+   2. YUVARLAK BUTON (FAB) - Minimalist Mat Siyah
+   ========================================================================== */
+
+#ai-widget-container .ai-toggle-btn {
+    width: 56px;
+    height: 56px;
+    border-radius: 50%;
+    background-color: #111827; /* Mat Siyah */
+    color: #ffffff;
+    border: 1px solid rgba(255,255,255,0.1);
+    
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    
+    font-size: 24px;
+    cursor: pointer;
+    box-shadow: 0 4px 12px rgba(0, 0, 0, 0.15);
+    transition: all 0.3s cubic-bezier(0.25, 0.8, 0.25, 1);
+}
+
+#ai-widget-container .ai-toggle-btn:hover {
+    transform: scale(1.05);
+    background-color: #000000;
+    box-shadow: 0 8px 24px rgba(0, 0, 0, 0.25);
+}
+
+/* ==========================================================================
+   3. SOHBET PENCERESİ - Temiz Kart
+   ========================================================================== */
+
+#ai-widget-container .ai-chat-window {
+    width: 380px;
+    height: 600px;
+    max-height: 80vh;
+    background-color: #ffffff;
+    border-radius: 16px;
+    border: 1px solid #e5e7eb; /* Çok hafif çerçeve */
+    box-shadow: 0 12px 40px -10px rgba(0, 0, 0, 0.1); /* Yumuşak gölge */
+    
+    display: flex;
+    flex-direction: column;
+    overflow: hidden;
+    
+    /* Açılış Animasyonu */
+    opacity: 1;
+    transform: translateY(0) scale(1);
+    transition: all 0.3s cubic-bezier(0.25, 0.8, 0.25, 1);
+    transform-origin: bottom right;
+}
+
+/* Gizli Durum */
+#ai-widget-container .ai-chat-window.hidden {
+    opacity: 0;
+    transform: translateY(20px) scale(0.95);
+    pointer-events: none;
+    visibility: hidden;
+}
+
+/* --- HEADER --- */
+#ai-widget-container .ai-chat-header {
+    padding: 16px 20px;
+    background-color: #ffffff;
+    border-bottom: 1px solid #f3f4f6;
+    display: flex;
+    justify-content: space-between;
+    align-items: center;
+}
+
+#ai-widget-container .ai-header-title {
+    font-weight: 600;
+    font-size: 15px;
+    color: #111827;
+    display: flex;
+    align-items: center;
+    gap: 8px;
+}
+
+#ai-widget-container .ai-header-title i {
+    color: #4f46e5; /* İkon rengi (İndigo) */
+}
+
+#ai-widget-container .ai-header-btn {
+    background: transparent;
+    border: none;
+    color: #9ca3af;
+    font-size: 20px;
+    cursor: pointer;
+    padding: 4px;
+    border-radius: 6px;
+    transition: 0.2s;
+    display: flex;
+    align-items: center;
+    justify-content: center;
+}
+
+#ai-widget-container .ai-header-btn:hover {
+    background-color: #f3f4f6;
+    color: #ef4444; /* Hover'da hafif kırmızı */
+}
+
+/* --- MESAJ ALANI --- */
+#ai-widget-container .ai-chat-messages {
+    flex: 1;
+    padding: 20px;
+    overflow-y: auto;
+    background-color: #ffffff; /* Tam beyaz, WhatsApp Web gibi gri değil */
+    display: flex;
+    flex-direction: column;
+    gap: 16px;
+}
+
+/* Scrollbar Gizle/Güzelleştir */
+#ai-widget-container .ai-chat-messages::-webkit-scrollbar { width: 5px; }
+#ai-widget-container .ai-chat-messages::-webkit-scrollbar-thumb { background: #e5e7eb; border-radius: 10px; }
+#ai-widget-container .ai-chat-messages::-webkit-scrollbar-track { background: transparent; }
+
+/* --- BALONCUKLAR --- */
+#ai-widget-container .message {
+    max-width: 90%;
+    animation: fadeIn 0.2s ease-out;
+}
+
+@keyframes fadeIn { from { opacity: 0; transform: translateY(5px); } to { opacity: 1; transform: translateY(0); } }
+
+/* İçerik Kutusu */
+#ai-widget-container .message-content {
+    padding: 10px 14px;
+    border-radius: 12px;
+    font-size: 14px;
+    line-height: 1.5;
+    position: relative;
+    word-wrap: break-word;
+}
+
+/* AI Mesajı (Gri) */
+#ai-widget-container .ai-message { align-self: flex-start; }
+#ai-widget-container .ai-message .message-content {
+    background-color: #f3f4f6;
+    color: #1f2937;
+    border-bottom-left-radius: 2px;
+}
+
+/* Kullanıcı Mesajı (Siyah) */
+#ai-widget-container .user-message { align-self: flex-end; }
+#ai-widget-container .user-message .message-content {
+    background-color: #111827; /* Mat Siyah */
+    color: #ffffff;
+    border-bottom-right-radius: 2px;
+}
+
+/* ==========================================================================
+   4. TABLO & MARKDOWN (Anti-Conflict)
+   ========================================================================== */
+
+/* Tablo */
+#ai-widget-container .message-content table {
+    width: 100% !important;
+    border-collapse: collapse !important;
+    margin: 10px 0 !important;
+    font-size: 13px !important;
+    background: #fff !important;
+    border: 1px solid #e5e7eb !important;
+    border-radius: 8px !important;
+    overflow: hidden !important;
+}
+
+#ai-widget-container .message-content th {
+    background-color: #f9fafb !important;
+    font-weight: 600 !important;
+    text-align: left !important;
+    padding: 8px 12px !important;
+    color: #4b5563 !important;
+    border-bottom: 1px solid #e5e7eb !important;
+}
+
+#ai-widget-container .message-content td {
+    padding: 8px 12px !important;
+    border-bottom: 1px solid #f3f4f6 !important;
+    color: #374151 !important;
+}
+
+#ai-widget-container .message-content tr:last-child td { border-bottom: none !important; }
+
+/* Liste */
+#ai-widget-container .message-content ul, 
+#ai-widget-container .message-content ol {
+    margin: 5px 0 5px 20px !important;
+    list-style-position: outside !important;
+}
+
+/* Kalın & Kod */
+#ai-widget-container .message-content strong { font-weight: 600; color: inherit; }
+#ai-widget-container .message-content code {
+    font-family: monospace;
+    background: rgba(0,0,0,0.06);
+    padding: 2px 4px;
+    border-radius: 4px;
+    font-size: 0.9em;
+}
+
+/* Kullanıcı balonunda kod arkaplanını koyu yap */
+#ai-widget-container .user-message code { background: rgba(255,255,255,0.2); }
+
+/* ==========================================================================
+   5. INPUT ALANI (Sade)
+   ========================================================================== */
+
+#ai-widget-container .ai-chat-input-area {
+    padding: 12px 16px;
+    background-color: #ffffff;
+    border-top: 1px solid #f3f4f6;
+    display: flex;
+    gap: 8px;
+    align-items: center;
+}
+
+#ai-widget-container input[type="text"] {
+    flex: 1;
+    padding: 10px 14px;
+    border: 1px solid #e5e7eb;
+    border-radius: 20px;
+    background-color: #f9fafb;
+    font-size: 14px;
+    color: #1f2937;
+    outline: none;
+    transition: all 0.2s;
+}
+
+#ai-widget-container input[type="text"]:focus {
+    background-color: #fff;
+    border-color: #d1d5db;
+    box-shadow: 0 0 0 3px rgba(243, 244, 246, 0.5);
+}
+
+#ai-widget-container #ai-send-btn {
+    width: 36px;
+    height: 36px;
+    border-radius: 50%;
+    background-color: #111827;
+    color: white;
+    border: none;
+    font-size: 16px;
+    cursor: pointer;
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    transition: transform 0.2s;
+}
+
+#ai-widget-container #ai-send-btn:hover {
+    transform: scale(1.1);
+    background-color: #000;
+}
+
+/* ==========================================================================
+   6. MOBİL UYUM
+   ========================================================================== */
+@media (max-width: 480px) {
+    #ai-widget-container {
+        right: 16px;
+        bottom: 16px;
+    }
+    
+    #ai-widget-container .ai-chat-window {
+        width: calc(100vw - 32px);
+        height: 60vh;
+        position: fixed;
+        bottom: 85px;
+        right: 16px;
+    }
+}

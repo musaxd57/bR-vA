@@ -1,0 +1,49 @@
+<!DOCTYPE html>
+<html lang="tr">
+<head>
+  <meta charset="UTF-8" />
+  <meta name="viewport" content="width=device-width, initial-scale=1" />
+  <title>envaner | Geri Bildirim</title>
+  <!-- Diğer sayfalarla tutarlı bir görünüm için definitions.css'i kullanıyoruz -->
+  <link rel="stylesheet" href="{{ url_for('static', filename='definitions.css') }}">
+  <link rel="stylesheet" href="{{ url_for('static', filename='sidebar.css') }}">
+  <link href="https://cdn.jsdelivr.net/npm/remixicon@4.2.0/fonts/remixicon.css" rel="stylesheet">
+</head>
+<body>
+{% include "sidebar.html" %}
+
+<main class="main-container">
+    <section class="card">
+        <header class="card-header">
+            <h2 class="card-title"><i class="ri-feedback-line"></i>Geri Bildirim Gönder</h2>
+        </header>
+        <div class="card-body">
+
+            <!-- Flash mesajlarını (başarılı, hata vb.) göstermek için bu blok gereklidir -->
+            {% with messages = get_flashed_messages(with_categories=true) %}
+              {% if messages %}
+                {% for category, message in messages %}
+                  <div class="alert alert-{{ category }}">{{ message }}</div>
+                {% endfor %}
+              {% endif %}
+            {% endwith %}
+
+            <p class="form-description">
+              Uygulama ile ilgili görüşlerinizi, önerilerinizi veya karşılaştığınız sorunları bize bildirebilirsiniz.
+            </p>
+
+            <form method="POST" action="{{ url_for('feedback') }}">
+                <div class="form-group">
+                    <label for="message">Mesajınız</label>
+                    <textarea id="message" name="message" rows="8" placeholder="Lütfen mesajınızı buraya yazın..." required></textarea>
+                </div>
+                <div class="form-actions">
+                    <button type="submit" class="btn btn-primary">Gönder</button>
+                </div>
+            </form>
+        </div>
+    </section>
+</main>
+<script src="{{ url_for('static', filename='js/feedback.js') }}"></script>
+</body>
+</html>
